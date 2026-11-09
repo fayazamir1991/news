@@ -12,6 +12,8 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v5
+      - name: Check daily dates, archive and repository section
+        run: python3 -m unittest discover -s tests
       - name: Build Docker image
         run: docker build -t weekly-news:ci .
       - name: Verify the served site
