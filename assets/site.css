@@ -1,0 +1,26 @@
+@font-face{font-family:Vazirmatn;src:url('/assets/vazirmatn.woff2') format('woff2');font-style:normal;font-weight:100 900;font-display:swap}
+:root{color-scheme:light;--paper:#faf9f5;--ink:#172e2b;--teal:#08665a;--rule:#cbd5ce}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:1rem}
+body{margin:0;background:var(--paper);color:var(--ink);font:1.04rem/1.95 Vazirmatn,Tahoma,sans-serif}
+a{color:var(--teal);text-decoration-thickness:1px;text-underline-offset:.28em}
+a:focus-visible{outline:3px solid #ce6b25;outline-offset:4px}
+header{border-bottom:1px solid var(--rule);border-top:5px solid var(--teal)}
+header nav,main,footer{max-width:61rem;margin:auto;padding-inline:clamp(1.15rem,5vw,3.75rem)}
+header nav,.sections,.links{display:flex;align-items:center;gap:1.1rem;flex-wrap:wrap}
+header nav{min-height:4.7rem}header a,.sections a,.issues a{text-decoration:none}
+.brand{margin-inline-end:auto;font-size:1.45rem;font-weight:900;color:var(--ink)}.brand span{color:#c96332}
+.intro{padding-block:clamp(2rem,6vw,4.25rem) 1.1rem}.kicker,.number{color:var(--teal);font-weight:750}
+h1,h2,h3,p{margin:0}h1{font-size:clamp(2rem,5.8vw,3.8rem);letter-spacing:-.04em;line-height:1.5}
+.deck{font-size:1.15rem;max-width:44rem;color:#43554f;margin-top:.6rem}
+.sections{border-block:1px solid var(--rule);padding-block:.8rem;gap:1.5rem}.sections small{margin-inline-start:.22rem}
+section{margin-top:3rem}h2{font-size:1.85rem;border-bottom:2px solid var(--ink);padding-bottom:.45rem}
+article{display:grid;grid-template-columns:2.2rem minmax(0,1fr);gap:.55rem;padding:1.35rem 0;border-bottom:1px solid var(--rule)}
+.number{font-size:1.2rem}.links{gap:.35rem 1rem;margin-top:.3rem;font-size:.88rem}
+h3{font-size:1.18rem;line-height:1.65;margin-bottom:.35rem}article p{max-width:47rem}
+.archive{display:inline-block;margin-block:2.2rem}
+.issues{list-style:none;margin:0 0 3rem;padding:0}.issues li{border-block-end:1px solid var(--rule)}.issues a{display:flex;justify-content:space-between;gap:1rem;padding-block:1rem}
+footer{border-block-start:1px solid var(--rule);padding-block:1.5rem;color:#4c6058;font-size:.85rem}
+img{max-width:100%;height:auto}figure{margin:1rem 0}.skip{position:absolute;transform:translateY(-180%);background:white;padding:.3rem}.skip:focus{transform:none}
+@media(max-width:480px){header nav{gap:.8rem}.sections{gap:.75rem}article{grid-template-columns:1.65rem minmax(0,1fr)}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}

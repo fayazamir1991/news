@@ -1,0 +1,28 @@
+name: Build and smoke-test website
+on:
+  push:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  container:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - name: Build Docker image
+        run: docker build -t weekly-news:ci .
+      - name: Verify the served site
+        run: |
+          set -eu
+          docker run -d --name weekly-news -p 127.0.0.1:8080:8080 weekly-news:ci
+          trap 'docker logs weekly-news; docker rm -f weekly-news' EXIT
+          base=http://127.0.0.1:8080
+          curl --retry 12 --retry-all-errors --retry-delay 1 --max-time 4 -fsS "$base/healthz"
+          curl -fsS "$base/" -o /tmp/weekly-home.html
+          grep -q 'id="research"' /tmp/weekly-home.html
+          curl -fsS "$base/archive/" -o /tmp/weekly-archive.html
+          grep -q '/issues/' /tmp/weekly-archive.html
+          curl -fsS "$base/assets/vazirmatn.woff2" -o /dev/null
