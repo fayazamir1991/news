@@ -1,5 +1,4 @@
-"""Build a static Persian weekly from the Markdown subset in PUBLISHING.md."""
-from datetime import date
+"""Render daily Persian briefings and archived weekly editions."""
 from html import escape
 from pathlib import Path
 import re
@@ -8,12 +7,23 @@ from urllib.parse import urlsplit
 
 ROOT = Path(__file__).resolve().parent
 OUT = ROOT / 'dist'
-SECTIONS = {'پژوهش‌ها': 'research', 'بینایی ماشین': 'vision', 'هوش مصنوعی': 'ai'}
+SECTIONS = {'پژوهش‌ها': 'research', 'بینایی ماشین': 'vision', 'هوش مصنوعی': 'ai', 'گیت‌هاب': 'github'}
+MONTHS = 'فروردین اردیبهشت خرداد تیر مرداد شهریور مهر آبان آذر دی بهمن اسفند'.split()
+ARCHIVE_DATE = re.compile(r'<!-- weekly-end: ([0-9]{4}-[0-9]{2}-[0-9]{2}) -->')
 LINK = re.compile(r'(!?)\[([^\]]+)\]\((https?://[^\s]+)\)')
 
 
 def fa(value):
     return str(value).translate(str.maketrans('0123456789', '۰۱۲۳۴۵۶۷۸۹'))
+
+
+def solar_title(key):
+    if not re.fullmatch(r'1[34][0-9]{2}-[0-9]{2}-[0-9]{2}', key):
+        raise ValueError(f'Expected a Solar Hijri edition date, got {key!r}')
+    year, month, day = map(int, key.split('-'))
+    if not (1 <= month <= 12 and 1 <= day <= (31 if month <= 6 else 30)):
+        raise ValueError(f'Invalid Solar Hijri month/day in {key!r}')
+    return f'{fa(day)} {MONTHS[month - 1]} {fa(year)}'
 
 
 def source_line(line):
@@ -33,11 +43,19 @@ def parse(path):
     lines = [line.strip() for line in path.read_text().splitlines() if line.strip()]
     if not lines or not lines[0].startswith('# '):
         raise ValueError(f'{path}: missing issue title')
+    title = lines.pop(0)[2:]
+    archived = ARCHIVE_DATE.fullmatch(lines[0]) if lines else None
+    if archived:
+        lines.pop(0)
+    day_key = archived.group(1) if archived else path.stem
+    full_date = solar_title(day_key)
+    if not archived and title != full_date:
+        raise ValueError(f'{path}: expected title {full_date!r}')
     sections = {}
     intro = []
     section = None
     story = None
-    for line in lines[1:]:
+    for line in lines:
         if line.startswith('## '):
             section = line[3:]
             if section not in SECTIONS or section in sections:
@@ -59,13 +77,20 @@ def parse(path):
                 story['images' if line.startswith('!') else 'sources'].append(link)
             else:
                 story['body'].append(line)
-    if list(sections) != list(SECTIONS):
+    expected = list(SECTIONS)[:-1] if archived else list(SECTIONS)
+    if list(sections) != expected:
         raise ValueError(f'{path}: missing or out-of-order section')
-    for stories in sections.values():
+    if len(sections.get('گیت‌هاب', [])) > 5:
+        raise ValueError(f'{path}: at most five GitHub repositories per issue')
+    for name, stories in sections.items():
         for item in stories:
             if not item['sources'] or not item['body']:
                 raise ValueError(f'{path}: each article needs a summary and a source')
-    return {'slug': date.fromisoformat(path.stem).isoformat(), 'title': lines[0][2:],
+            if not archived and item['title'].partition(' · ')[0] not in (full_date, full_date.rsplit(' ', 1)[0]):
+                raise ValueError(f'{path}: article date must match the issue date')
+            if name == 'گیت‌هاب' and not any(re.search(r'href="https://github\.com/[^/?#"]+/[^/?#"]+/?["#?]', link) for link in item['sources']):
+                raise ValueError(f'{path}: include the direct GitHub repository link')
+    return {'slug': path.stem, 'day_key': day_key, 'daily': not archived, 'title': title,
             'intro': ' '.join(intro), 'sections': sections}
 
 
@@ -75,17 +100,20 @@ def page(title, content):
 <link rel="stylesheet" href="/assets/site.css"></head><body><a class="skip" href="#main">رفتن به محتوا</a>
 <header><nav><a class="brand" href="/">دیده‌بان تصویر<span aria-hidden="true">.</span></a>
 <a href="/">آخرین شماره</a><a href="/archive/">آرشیو</a></nav></header>
-<main id="main">{content}</main><footer>دیده‌بان تصویر · هفته‌نامهٔ بینایی ماشین و هوش مصنوعی</footer></body></html>'''
+<main id="main">{content}</main><footer>دیده‌بان تصویر · خبرنامهٔ روزانهٔ بینایی ماشین و هوش مصنوعی</footer></body></html>'''
 
 
 def issue_page(issue):
-    parts = [f'<div class="intro"><p class="kicker">گزارش هفتگی</p><h1>{escape(issue["title"])}</h1>'
+    edition = 'گزارش روزانه' if issue['daily'] else 'گزارش هفتگی آرشیوی'
+    parts = [f'<div class="intro"><p class="kicker">{edition}</p><h1>{escape(issue["title"])}</h1>'
              f'<p class="deck">{escape(issue["intro"])}</p></div><nav class="sections" aria-label="بخش‌های شماره">']
     for title, stories in issue['sections'].items():
         parts.append(f'<a href="#{SECTIONS[title]}">{title} <small>{fa(len(stories))}</small></a>')
     parts.append('</nav>')
     for title, stories in issue['sections'].items():
         parts.append(f'<section id="{SECTIONS[title]}"><h2>{title}</h2>')
+        if not stories:
+            parts.append('<p>برای این روز مورد تازه و مرتبطی تأیید نشد.</p>')
         for i, item in enumerate(stories, 1):
             body = ''.join(f'<p>{escape(p)}</p>' for p in item['body'])
             parts.append(f'<article><span class="number">{fa(i):s}</span><div><h3>{escape(item["title"])}</h3>'
@@ -102,7 +130,8 @@ def write_page(relative_path, html):
 
 
 def build():
-    issues = [parse(path) for path in sorted((ROOT / 'content/briefings').glob('*.md'), reverse=True)]
+    issues = sorted((parse(path) for path in (ROOT / 'content/briefings').glob('*.md')),
+                    key=lambda item: (item['day_key'], item['daily']), reverse=True)
     if not issues:
         raise ValueError('At least one dated briefing is required')
     shutil.copytree(ROOT / 'assets', OUT / 'assets', dirs_exist_ok=True)
