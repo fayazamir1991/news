@@ -1,0 +1,6 @@
+.git
+.github
+dist
+__pycache__
+*.md
+!content/briefings/*.md
