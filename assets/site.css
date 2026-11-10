@@ -10,6 +10,10 @@ header nav,main,footer{max-width:61rem;margin:auto;padding-inline:clamp(1.15rem,
 header nav,.sections,.links{display:flex;align-items:center;gap:1.1rem;flex-wrap:wrap}
 header nav{min-height:4.7rem}header a,.sections a,.issues a{text-decoration:none}
 .brand{margin-inline-end:auto;font-size:1.45rem;font-weight:900;color:var(--ink)}.brand span{color:#c96332}
+.brand{display:flex;align-items:center;gap:.5rem}.brand img{border-radius:.5rem}
+#install-app{font:inherit;font-size:.85rem;color:var(--teal);border:1px solid var(--teal);background:transparent;padding:.2rem .7rem;border-radius:2rem;cursor:pointer}
+#install-app[hidden],[hidden]{display:none!important}
+#install-help,#offline-status{margin:0;padding:.7rem 5vw;background:#edf2ed;font-size:.9rem}
 .intro{padding-block:clamp(2rem,6vw,4.25rem) 1.1rem}.kicker,.number{color:var(--teal);font-weight:750}
 h1,h2,h3,p{margin:0}h1{font-size:clamp(2rem,5.8vw,3.8rem);letter-spacing:-.04em;line-height:1.5}
 .deck{font-size:1.15rem;max-width:44rem;color:#43554f;margin-top:.6rem}

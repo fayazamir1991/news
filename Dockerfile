@@ -3,6 +3,7 @@ WORKDIR /site
 COPY build.py ./
 COPY assets ./assets
 COPY content ./content
+COPY pwa ./pwa
 RUN python build.py
 
 FROM nginx:stable-alpine
