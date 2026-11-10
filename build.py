@@ -113,6 +113,10 @@ def parse(path):
             intro.append(line)
         elif story is None:
             raise ValueError(f'{path}: expected article heading')
+        elif section == SURVEY_SECTION and re.match(r'^(ارسال به arXiv|انتشار مقاله): ', line):
+            if story.get('paper_date_line'):
+                raise ValueError(f'{path}: duplicate survey paper date')
+            story['paper_date_line'] = line
         else:
             link = source_line(line)
             if link:
@@ -167,11 +171,16 @@ def parse_survey(path):
     if not metadata:
         raise ValueError(f'{path}: missing survey metadata')
     data = json.loads(metadata.group(1))
-    if not isinstance(data, dict) or not all(isinstance(data.get(k), str) and data[k].strip() for k in ('arxiv_id', 'first_issue', 'summary')):
+    if not isinstance(data, dict) or not all(isinstance(data.get(k), str) and data[k].strip() for k in ('arxiv_id', 'first_issue', 'summary', 'paper_date', 'paper_date_kind', 'paper_date_source')):
         raise ValueError(f'{path}: invalid survey metadata')
     if data['arxiv_id'] != path.stem or any(c in data['summary'] for c in '\r\n'):
         raise ValueError(f'{path}: invalid survey identity or summary')
     solar_title(data['first_issue'])
+    solar_title(data['paper_date'])
+    if data['paper_date_kind'] not in ('submitted', 'published'):
+        raise ValueError(f'{path}: invalid survey paper date kind')
+    if urlsplit(data['paper_date_source']).scheme != 'https' or not urlsplit(data['paper_date_source']).hostname:
+        raise ValueError(f'{path}: invalid survey paper date source')
     sections, sources, images = {}, [], []
     current = None
     for line in lines[2:]:
@@ -192,6 +201,8 @@ def parse_survey(path):
                 raise ValueError(f'{path}: paragraph before survey subsection')
     if list(sections) != list(SURVEY_HEADINGS) or not all(sections.values()) or not sources:
         raise ValueError(f'{path}: survey needs analysis, complete translations and sources')
+    if not any(f'href="{escape(data["paper_date_source"], quote=True)}"' in source for source in sources):
+        raise ValueError(f'{path}: include the primary survey date source')
     return {**data, 'slug': path.stem, 'title': lines[0][2:], 'sections': sections, 'sources': sources, 'images': images}
 
 
@@ -265,8 +276,9 @@ def issue_page(issue):
                            else f'<p>{escape(p)}</p>' for p in item['body'])
             heading = f'<a href="/surveys/{item["survey_slug"]}/">{escape(item["title"])}</a>' if item.get('survey_slug') else escape(item['title'])
             visible_sources = [link for link in item['sources'] if 'class="survey-link"' in link] if item.get('survey_slug') else item['sources']
+            paper_date = f'<p class="survey-dates">{escape(item["paper_date_line"])}</p>' if item.get('paper_date_line') else ''
             parts.append(f'<article id="item-{record["id"]}"><span class="number">{fa(i):s}</span><div><h3>{heading}</h3>'
-                         f'{body}{"".join(item["images"])}<div class="links">{" ".join(visible_sources)}'
+                         f'{paper_date}{body}{"".join(item["images"])}<div class="links">{" ".join(visible_sources)}'
                          f'<button class="bookmark" data-item-id="{record["id"]}" aria-pressed="false" aria-label="ذخیرهٔ {escape(item["title"], quote=True)}">ذخیره</button></div></div></article>')
         parts.append('</section>')
     if issue.get('execution'):
@@ -275,12 +287,20 @@ def issue_page(issue):
     return page(issue['title'], ''.join(parts), 'home')
 
 
+def survey_date_label(survey):
+    label = 'ارسال به arXiv' if survey['paper_date_kind'] == 'submitted' else 'انتشار مقاله'
+    return f'{label}: {solar_title(survey["paper_date"])}'
+
+
 def survey_page(survey, record):
     contents = ''.join(f'<a href="#part-{i}">{escape(heading)}</a>' for i, heading in enumerate(SURVEY_HEADINGS))
     sections = ''.join(f'<section id="part-{i}"><h2>{escape(heading)}</h2>' + ''.join(f'<p>{escape(p)}</p>' for p in paragraphs) + '</section>' for i, (heading, paragraphs) in enumerate(survey['sections'].items()))
+    tools = f'<div class="survey-tools"><nav class="survey-contents" aria-label="بخش‌های مقاله"><p class="tool-label">در این مقاله</p><div class="tool-links">{contents}</div></nav>'
+    tools += f'<aside class="survey-sources" aria-label="لینک‌های مستقیم مقاله"><p class="tool-label">مقاله و منابع اصلی</p><div class="tool-links">{" ".join(survey["sources"])}</div></aside></div>'
     return page(survey['title'], f'<div class="intro"><p class="kicker">مقالهٔ مروری · درسنامهٔ بینایی ماشین</p><h1>{escape(survey["title"])}</h1><p class="deck">{escape(survey["summary"])}</p>'
-        f'<p class="bookmark-meta">معرفی در <a href="/issues/{survey["first_issue"]}/">{solar_title(survey["first_issue"])}</a></p></div>'
-        f'<nav class="sections" aria-label="بخش‌های مقاله">{contents}</nav><article class="survey-article" id="item-{record["id"]}"><div>{sections}{"".join(survey["images"])}<div class="links">{" ".join(survey["sources"])}'
+        f'<div class="survey-dates"><span>معرفی در <a href="/issues/{survey["first_issue"]}/">{solar_title(survey["first_issue"])}</a></span>'
+        f'<span><a href="{escape(survey["paper_date_source"], quote=True)}" rel="noopener noreferrer">{escape(survey_date_label(survey))}</a></span></div></div>'
+        f'{tools}<article class="survey-article" id="item-{record["id"]}"><div>{sections}{"".join(survey["images"])}<div class="links">'
         f'<button class="bookmark" data-item-id="{record["id"]}" aria-pressed="false" aria-label="ذخیرهٔ {escape(survey["title"], quote=True)}">ذخیره</button></div></div></article>'
         '<a class="archive" href="/surveys/">همهٔ مقالات مروری ←</a>', 'surveys')
 
@@ -325,7 +345,7 @@ def build():
                 catalog[record['id']] = record
                 if item.get('survey_slug'):
                     survey = surveys.get(item['survey_slug'])
-                    if not survey or survey['first_issue'] != issue['slug'] or survey['sources'][0] != item['sources'][0] or survey['summary'] != item['body'][0]:
+                    if not survey or survey['first_issue'] != issue['slug'] or survey['sources'][0] != item['sources'][0] or survey['summary'] != item['body'][0] or item.get('paper_date_line') != survey_date_label(survey):
                         raise ValueError('Missing or mismatched dedicated survey reference')
                     if survey['slug'] in survey_records:
                         raise ValueError('Duplicate survey introduction')

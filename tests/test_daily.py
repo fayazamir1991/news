@@ -196,7 +196,7 @@ class DailyBriefings(unittest.TestCase):
 
     def dedicated_survey(self):
         path = self.write_day(repos=1)
-        metadata = {'arxiv_id': '2506.13457', 'first_issue': '1405-08-18', 'summary': 'موضوع و ارزش خواندن مقاله'}
+        metadata = {'arxiv_id': '2506.13457', 'first_issue': '1405-08-18', 'summary': 'موضوع و ارزش خواندن مقاله', 'paper_date': '1404-03-26', 'paper_date_kind': 'submitted', 'paper_date_source': 'https://arxiv.org/abs/2506.13457v1'}
         directory = self.root / 'content/surveys'
         directory.mkdir(parents=True, exist_ok=True)
         survey = directory / '2506.13457.md'
@@ -205,7 +205,7 @@ class DailyBriefings(unittest.TestCase):
         path.write_text(path.read_text().replace('## پژوهش‌ها', inline + '\n## پژوهش‌ها'))
         issue = build.parse(path)
         before = build.story_record(issue, build.SURVEY_SECTION, issue['sections'][build.SURVEY_SECTION][0])
-        teaser = '## مقالهٔ مروری روز\n### ۱۸ آبان · درس ردیابی\n' + metadata['summary'] + '\n[مقاله](https://arxiv.org/abs/2506.13457v1)\n[مطالعهٔ مقاله](/surveys/2506.13457/)\n'
+        teaser = '## مقالهٔ مروری روز\n### ۱۸ آبان · درس ردیابی\nارسال به arXiv: ۲۶ خرداد ۱۴۰۴\n' + metadata['summary'] + '\n[مقاله](https://arxiv.org/abs/2506.13457v1)\n[مطالعهٔ مقاله](/surveys/2506.13457/)\n'
         path.write_text(path.read_text().replace(inline, teaser))
         return path, survey, before
 
@@ -263,3 +263,38 @@ class DailyBriefings(unittest.TestCase):
         self.assertEqual(re.findall(r'<span>(.*?)</span>', html), ['آرشیو', 'مروری‌ها', 'خانه', 'حساب', 'ذخیره‌ها'])
         self.assertEqual(html.count('aria-current="page"'), 1)
         self.assertIn('aria-label="مقالات مروری" aria-current="page"', html)
+
+
+    def test_survey_dates_and_sources_appear_above_full_text(self):
+        path, survey_path, _ = self.dedicated_survey()
+        issue = build.parse(path)
+        survey = build.parse_survey(survey_path)
+        record = build.story_record(issue, build.SURVEY_SECTION, issue['sections'][build.SURVEY_SECTION][0])
+        daily = build.issue_page(issue)
+        self.assertIn('ارسال به arXiv: ۲۶ خرداد ۱۴۰۴', daily)
+        self.assertEqual(len(issue['sections'][build.SURVEY_SECTION][0]['body']), 1)
+        full = build.survey_page(survey, record)
+        self.assertIn('۱۸ آبان ۱۴۰۵', full)
+        self.assertIn('ارسال به arXiv: ۲۶ خرداد ۱۴۰۴', full)
+        self.assertLess(full.index('class="survey-sources"'), full.index('class="survey-article"'))
+        self.assertEqual(full.count('class="source"'), 1)
+        survey['paper_date_kind'] = 'published'
+        self.assertIn('انتشار مقاله: ۲۶ خرداد ۱۴۰۴', build.survey_page(survey, record))
+        self.assertNotIn('ارسال به arXiv', build.survey_page(survey, record))
+
+    def test_rejects_missing_unverified_or_inconsistent_survey_date(self):
+        path, survey, _ = self.dedicated_survey()
+        original = survey.read_text()
+        for key, value in [('paper_date', '1404-13-01'), ('paper_date_kind', 'accepted'), ('paper_date_source', 'https://example.org/unsupported')]:
+            lines = original.splitlines()
+            data = json.loads(lines[1][len('<!-- survey: '):-len(' -->')])
+            data[key] = value
+            lines[1] = '<!-- survey: ' + json.dumps(data, ensure_ascii=False) + ' -->'
+            survey.write_text('\n'.join(lines))
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                build.parse_survey(survey)
+        survey.write_text(original)
+        path.write_text(path.read_text().replace('۲۶ خرداد ۱۴۰۴', '۲۷ خرداد ۱۴۰۴'))
+        with patch.object(build, 'ROOT', self.root), patch.object(build, 'OUT', self.root / 'dist'):
+            with self.assertRaisesRegex(ValueError, 'survey reference'):
+                build.build()
