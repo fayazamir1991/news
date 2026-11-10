@@ -147,5 +147,25 @@
     "backfill": "disclose_gathering_date_and_allow_current_recent_work_unless_explicit_historical_reconstruction",
     "exact_publication_day_required": false,
     "source_dates_must_be_truthful": true
+  },
+  "execution_metadata": {
+    "file_suffix": ".execution.json",
+    "schema_version": 1,
+    "unknown_behavior": "omit",
+    "estimate_usage": false,
+    "model_provenance": [
+      "provider_response",
+      "runner_metadata"
+    ],
+    "usage_provenance": [
+      "provider_usage",
+      "runner_usage"
+    ],
+    "coverage": [
+      "full_run",
+      "partial_run"
+    ],
+    "count_distinct_model_calls_and_retries": true,
+    "never_double_count_reasoning_or_cached_subtotals": true
   }
 }
