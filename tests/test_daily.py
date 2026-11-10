@@ -25,7 +25,10 @@ class DailyBriefings(unittest.TestCase):
 
     def test_full_day_and_same_day_weekly_archive(self):
         archive = '2026-11-09.md'
-        (self.content / archive).write_bytes((build.ROOT / 'content' / 'briefings' / archive).read_bytes())
+        (self.content / archive).write_text('\n'.join([
+            '# ۱۲ تا ۱۸ آبان ۱۴۰۵', '<!-- weekly-end: 1405-08-18 -->',
+            *(f'## {s}' for s in list(build.SECTIONS)[:-1]),
+        ]))
         self.write_day(repos=5)
         self.write_day('1405-08-17')
         out = self.root / 'dist'
