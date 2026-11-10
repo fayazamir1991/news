@@ -5,6 +5,7 @@ import re
 import shutil
 import hashlib
 import json
+import os
 from urllib.parse import urlsplit
 
 ROOT = Path(__file__).resolve().parent
@@ -106,12 +107,25 @@ def page(title, content):
 <link rel="icon" type="image/png" href="/icons/icon-192.png">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <script src="/assets/app.js" defer></script>
+<script src="/assets/account-config.js" defer></script>
+<script src="/assets/account.js" defer></script>
 <link rel="stylesheet" href="/assets/site.css"></head><body><a class="skip" href="#main">رفتن به محتوا</a>
 <header><nav><a class="brand" href="/"><img src="/icons/icon-192.png" width="38" height="38" alt="">دیده‌بان تصویر</a>
-<a href="/">آخرین شماره</a><a href="/archive/">آرشیو</a><button id="install-app" hidden>نصب روی گوشی</button></nav></header>
+<a href="/">آخرین شماره</a><a href="/archive/">آرشیو</a><a href="/bookmarks/">ذخیره‌شده‌ها</a>
+<button id="sign-in">ورود با Google</button><span id="account-name" hidden></span><button id="sign-out" hidden>خروج</button>
+<button id="install-app" hidden>نصب روی گوشی</button></nav></header>
+<p id="account-status" role="status" hidden></p>
 <p id="install-help" hidden>در Safari دکمهٔ اشتراک‌گذاری را بزنید و «Add to Home Screen» را انتخاب کنید.</p>
 <p id="offline-status" role="status" hidden>آفلاین هستید؛ نسخهٔ ذخیره‌شده را می‌خوانید.</p>
 <main id="main">{content}</main><footer>دیده‌بان تصویر · خبرنامهٔ روزانهٔ بینایی ماشین و هوش مصنوعی</footer></body></html>'''
+
+
+def story_record(issue, section, item):
+    source = re.search(r'href="([^"]+)"', item['sources'][0]).group(1)
+    key = hashlib.sha256(f'{issue["slug"]}|{section}|{source}'.encode()).hexdigest()
+    return {'id': key, 'title': item['title'], 'summary': ' '.join(item['body']),
+            'section': section, 'issue': issue['title'],
+            'url': f'/issues/{issue["slug"]}/#item-{key}'}
 
 
 def issue_page(issue):
@@ -127,9 +141,11 @@ def issue_page(issue):
             empty = 'این بخش در نمونهٔ آزمایشی مطلبی ندارد.' if issue.get('preview') else 'برای این روز مورد تازه و مرتبطی تأیید نشد.'
             parts.append(f'<p>{empty}</p>')
         for i, item in enumerate(stories, 1):
+            record = story_record(issue, title, item)
             body = ''.join(f'<p>{escape(p)}</p>' for p in item['body'])
-            parts.append(f'<article><span class="number">{fa(i):s}</span><div><h3>{escape(item["title"])}</h3>'
-                         f'{body}{"".join(item["images"])}<div class="links">{" ".join(item["sources"])}</div></div></article>')
+            parts.append(f'<article id="item-{record["id"]}"><span class="number">{fa(i):s}</span><div><h3>{escape(item["title"])}</h3>'
+                         f'{body}{"".join(item["images"])}<div class="links">{" ".join(item["sources"])}'
+                         f'<button class="bookmark" data-item-id="{record["id"]}" aria-pressed="false" aria-label="ذخیرهٔ {escape(item["title"], quote=True)}">ذخیره</button></div></div></article>')
         parts.append('</section>')
     parts.append('<a class="archive" href="/archive/">مشاهدهٔ آرشیو گزارش‌ها ←</a>')
     return page(issue['title'], ''.join(parts))
@@ -150,8 +166,31 @@ def build():
         shutil.rmtree(OUT)
     shutil.copytree(ROOT / 'assets', OUT / 'assets', dirs_exist_ok=True)
     shutil.copytree(ROOT / 'pwa', OUT, dirs_exist_ok=True)
+    defaults_path = ROOT / 'auth-public.json'
+    defaults = json.loads(defaults_path.read_text()) if defaults_path.exists() else {}
+    auth_url = (os.environ.get('SUPABASE_URL') or defaults.get('url', '')).strip()
+    public_key = (os.environ.get('SUPABASE_PUBLISHABLE_KEY') or defaults.get('publishableKey', '')).strip()
+    if bool(auth_url) != bool(public_key):
+        raise ValueError('Set both SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY')
+    if auth_url and (urlsplit(auth_url).scheme != 'https' or not urlsplit(auth_url).hostname):
+        raise ValueError('SUPABASE_URL must use HTTPS')
+    if public_key and not public_key.startswith('sb_publishable_'):
+        raise ValueError('Only a Supabase publishable key may be included in the public site')
+    config = json.dumps({'url': auth_url, 'publishableKey': public_key}, ensure_ascii=False)
+    (OUT / 'assets/account-config.js').write_text('window.DIDEBAN_AUTH = ' + config + ';\n')
+    catalog = {}
     for issue in issues:
         write_page(f'issues/{issue["slug"]}/index.html', issue_page(issue))
+        for section, items in issue['sections'].items():
+            for item in items:
+                record = story_record(issue, section, item)
+                if record['id'] in catalog:
+                    raise ValueError('Duplicate article source in the same issue section')
+                catalog[record['id']] = record
+    (OUT / 'items.json').write_text(json.dumps(catalog, ensure_ascii=False))
+    write_page('bookmarks/index.html', page('ذخیره‌شده‌ها', '<div class="intro"><h1>ذخیره‌شده‌ها</h1>'
+               '<p id="bookmarks-message">برای دیدن لیست اختصاصی خود وارد حساب Google شوید.</p></div><div id="bookmark-list"></div>'))
+    write_page('auth/callback/index.html', page('ورود به حساب', '<div class="intro"><h1>ورود به حساب</h1><p>در حال بررسی ورود…</p></div>'))
     write_page('index.html', issue_page(issues[0]))
     previews = sorted((ROOT / 'content/previews').glob('*.md'), reverse=True)
     preview_rows = []

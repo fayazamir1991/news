@@ -26,6 +26,8 @@ self.addEventListener('fetch', event => {
   const request = event.request;
   const url = new URL(request.url);
   if (request.method !== 'GET' || url.origin !== self.location.origin) return;
+  // Authentication codes and error redirects must never enter Cache Storage.
+  if (url.pathname.startsWith('/auth/') || url.searchParams.has('code') || url.searchParams.has('error')) return;
   if (url.pathname === '/sw.js' || url.pathname === '/healthz') return;
   // Fetch each visited page again so a newly published report appears online.
   event.respondWith((async () => {
