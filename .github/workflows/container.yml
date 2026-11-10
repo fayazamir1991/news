@@ -35,6 +35,10 @@ jobs:
           curl -fsS "$base/archive/" -o /tmp/weekly-archive.html
           grep -q '/issues/' /tmp/weekly-archive.html
           curl -fsS "$base/assets/vazirmatn.woff2" -o /dev/null
+          curl -fsS "$base/privacy/" -o /tmp/privacy.html
+          grep -q 'سیاست حریم خصوصی' /tmp/privacy.html
+          curl -fsS "$base/terms/" -o /tmp/terms.html
+          grep -q 'شرایط استفاده' /tmp/terms.html
           node tests/pwa-browser.cjs
           node tests/bookmarks-browser.cjs
           if [ -d content/previews ]; then
