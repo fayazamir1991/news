@@ -1,6 +1,8 @@
 # Instructions for repository agents
 
-For preparing or publishing daily reports, first read [DAILY_BRIEFING_PROMPT.md](DAILY_BRIEFING_PROMPT.md), [briefing.config.json](briefing.config.json), and [PUBLISHING.md](PUBLISHING.md). They contain the complete editorial scope, Tehran target-day/retry rules, evidence requirements, GitHub discovery criteria, source format and exact-SHA CI/merge process. No chat history is required.
+For preparing or publishing daily reports, first read [DAILY_BRIEFING_PROMPT.md](DAILY_BRIEFING_PROMPT.md), [briefing.config.json](briefing.config.json), and [PUBLISHING.md](PUBLISHING.md). For GitHub discovery, also read [GITHUB_DISCOVERY_SOURCES.md](GITHUB_DISCOVERY_SOURCES.md). They contain the complete editorial scope, Tehran target-day/retry rules, evidence requirements, GitHub discovery criteria, source format and exact-SHA CI/merge process. No chat history is required.
+
+Persist new owner instructions about this project in the canonical prompt and, where relevant, synchronize configuration and related documentation. Do not persist secrets or unnecessary personal information in the public repository.
 
 Do not invent news, source URLs, dates, trending evidence or deployment success. Do not overwrite an already published day's file. Do not treat config flags as credentials or authorization. A fork needs its own publishing authorization, scheduler, hosting and authentication services; the full prompt documents migration.
 

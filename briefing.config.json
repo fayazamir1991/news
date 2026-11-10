@@ -11,20 +11,91 @@
     "runner": "external",
     "create_duplicate_scheduler": false
   },
-  "display_dates": {"calendar": "persian", "digits": "persian", "month": "persian_name"},
-  "file_dates": {"calendar": "persian", "digits": "latin", "format": "YYYY-MM-DD"},
+  "display_dates": {
+    "calendar": "persian",
+    "digits": "persian",
+    "month": "persian_name"
+  },
+  "file_dates": {
+    "calendar": "persian",
+    "digits": "latin",
+    "format": "YYYY-MM-DD"
+  },
   "sections": [
-    {"title": "پژوهش‌ها", "maximum": 10},
-    {"title": "بینایی ماشین", "maximum": 5},
-    {"title": "هوش مصنوعی", "maximum": 5},
-    {"title": "گیت‌هاب", "maximum": 5}
+    {
+      "title": "پژوهش‌ها",
+      "maximum": 10
+    },
+    {
+      "title": "بینایی ماشین",
+      "maximum": 5
+    },
+    {
+      "title": "هوش مصنوعی",
+      "maximum": 5
+    },
+    {
+      "title": "گیت‌هاب",
+      "maximum": 5
+    }
   ],
   "github_discovery": {
     "new_project_days_including_target": 30,
     "recent_attention_days_including_target": 7,
     "routine_commits_qualify": false,
     "total_stars_prove_trending": false,
-    "repeat_without_substantive_new_event": false
+    "repeat_without_substantive_new_event": false,
+    "sources_file": "GITHUB_DISCOVERY_SOURCES.md",
+    "sources": [
+      {
+        "id": "github_trending",
+        "url": "https://github.com/trending",
+        "priority": "primary",
+        "role": "github_ranking"
+      },
+      {
+        "id": "trendshift",
+        "url": "https://trendshift.io/",
+        "priority": "primary",
+        "role": "third_party_ranking"
+      },
+      {
+        "id": "trendshift_image_recognition",
+        "url": "https://trendshift.io/topics/image-recognition",
+        "priority": "primary",
+        "role": "topic_discovery"
+      },
+      {
+        "id": "upstar_computer_vision",
+        "url": "https://upstar.dev/t/computer-vision",
+        "priority": "supplementary",
+        "role": "third_party_ranking"
+      },
+      {
+        "id": "star_history",
+        "url": "https://www.star-history.com/",
+        "priority": "supplementary",
+        "role": "growth_verification"
+      },
+      {
+        "id": "trendrepo",
+        "url": "https://trendrepo.dev/",
+        "priority": "supplementary",
+        "role": "third_party_growth_discovery"
+      },
+      {
+        "id": "hugging_face_papers",
+        "url": "https://huggingface.co/papers/trending",
+        "priority": "supplementary",
+        "role": "research_discovery"
+      },
+      {
+        "id": "github_computer_vision",
+        "url": "https://github.com/topics/computer-vision",
+        "priority": "supplementary",
+        "role": "topic_discovery"
+      }
+    ]
   },
   "publishing": {
     "directory": "content/briefings",
@@ -35,7 +106,10 @@
     "overwrite_published_issue": false,
     "owner_authorization_required": true
   },
-  "delivery": {"channel": "authorized_runner_output", "same_report_as_repository": true},
+  "delivery": {
+    "channel": "authorized_runner_output",
+    "same_report_as_repository": true
+  },
   "canonical_prompt": "DAILY_BRIEFING_PROMPT.md",
   "configuration_is_executed_by_runner_not_site_builder": true
 }
