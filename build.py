@@ -11,7 +11,10 @@ from legal import PRIVACY, TERMS
 
 ROOT = Path(__file__).resolve().parent
 OUT = ROOT / 'dist'
-SECTIONS = {'پژوهش‌ها': 'research', 'بینایی ماشین': 'vision', 'هوش مصنوعی': 'ai', 'گیت‌هاب': 'github'}
+NEWS_SECTIONS = {'پژوهش‌ها': 'research', 'بینایی ماشین': 'vision', 'هوش مصنوعی': 'ai', 'گیت‌هاب': 'github'}
+SURVEY_SECTION = 'مقالهٔ مروری روز'
+SURVEY_HEADINGS = ('توضیح و تحلیل مقاله', 'ترجمهٔ کامل مقدمه', 'ترجمهٔ کامل نتیجه‌گیری')
+SECTIONS = {SURVEY_SECTION: 'survey', **NEWS_SECTIONS}
 MONTHS = 'فروردین اردیبهشت خرداد تیر مرداد شهریور مهر آبان آذر دی بهمن اسفند'.split()
 ARCHIVE_DATE = re.compile(r'<!-- weekly-end: ([0-9]{4}-[0-9]{2}-[0-9]{2}) -->')
 LINK = re.compile(r'(!?)\[([^\]]+)\]\((https?://[^\s]+)\)')
@@ -112,9 +115,12 @@ def parse(path):
                 story['images' if line.startswith('!') else 'sources'].append(link)
             else:
                 story['body'].append(line)
-    expected = list(SECTIONS)[:-1] if archived else list(SECTIONS)
+    expected = (list(NEWS_SECTIONS)[:-1] if archived else
+                list(SECTIONS) if SURVEY_SECTION in sections else list(NEWS_SECTIONS))
     if list(sections) != expected:
         raise ValueError(f'{path}: missing or out-of-order section')
+    if len(sections.get(SURVEY_SECTION, [])) > 1:
+        raise ValueError(f'{path}: at most one daily survey')
     if len(sections.get('گیت‌هاب', [])) > 5:
         raise ValueError(f'{path}: at most five GitHub repositories per issue')
     for name, stories in sections.items():
@@ -125,6 +131,13 @@ def parse(path):
                 raise ValueError(f'{path}: article date must match the issue date')
             if name == 'گیت‌هاب' and not any(re.search(r'href="https://github\.com/[^/?#"]+/[^/?#"]+/?["#?]', link) for link in item['sources']):
                 raise ValueError(f'{path}: include the direct GitHub repository link')
+            if name == SURVEY_SECTION:
+                headings = [line[5:] for line in item['body'] if line.startswith('#### ')]
+                if headings != list(SURVEY_HEADINGS):
+                    raise ValueError(f'{path}: survey needs analysis and two complete translation headings')
+                for index, line in enumerate(item['body']):
+                    if line.startswith('#### ') and (index + 1 == len(item['body']) or item['body'][index + 1].startswith('#### ')):
+                        raise ValueError(f'{path}: empty survey subsection')
     return {'slug': path.stem, 'day_key': day_key, 'daily': not archived, 'title': title,
             'intro': ' '.join(intro), 'sections': sections, 'execution': execution_summary(path)}
 
@@ -157,7 +170,8 @@ def page(title, content):
 def story_record(issue, section, item):
     source = re.search(r'href="([^"]+)"', item['sources'][0]).group(1)
     key = hashlib.sha256(f'{issue["slug"]}|{section}|{source}'.encode()).hexdigest()
-    return {'id': key, 'title': item['title'], 'summary': ' '.join(item['body']),
+    summary = ' '.join(p for p in item['body'] if section != SURVEY_SECTION or not p.startswith('#### '))
+    return {'id': key, 'title': item['title'], 'summary': summary,
             'section': section, 'issue': issue['title'],
             'url': f'/issues/{issue["slug"]}/#item-{key}'}
 
@@ -176,7 +190,8 @@ def issue_page(issue):
             parts.append(f'<p>{empty}</p>')
         for i, item in enumerate(stories, 1):
             record = story_record(issue, title, item)
-            body = ''.join(f'<p>{escape(p)}</p>' for p in item['body'])
+            body = ''.join(f'<h4>{escape(p[5:])}</h4>' if title == SURVEY_SECTION and p.startswith('#### ')
+                           else f'<p>{escape(p)}</p>' for p in item['body'])
             parts.append(f'<article id="item-{record["id"]}"><span class="number">{fa(i):s}</span><div><h3>{escape(item["title"])}</h3>'
                          f'{body}{"".join(item["images"])}<div class="links">{" ".join(item["sources"])}'
                          f'<button class="bookmark" data-item-id="{record["id"]}" aria-pressed="false" aria-label="ذخیرهٔ {escape(item["title"], quote=True)}">ذخیره</button></div></div></article>')
