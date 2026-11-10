@@ -40,8 +40,6 @@
     }
   ],
   "github_discovery": {
-    "new_project_days_including_target": 30,
-    "recent_attention_days_including_target": 7,
     "routine_commits_qualify": false,
     "total_stars_prove_trending": false,
     "repeat_without_substantive_new_event": false,
@@ -94,7 +92,35 @@
         "url": "https://github.com/topics/computer-vision",
         "priority": "supplementary",
         "role": "topic_discovery"
+      },
+      {
+        "id": "daily_launch",
+        "url": "https://dailylaunch.org/",
+        "priority": "supplementary",
+        "role": "dated_launch_ranking"
       }
+    ],
+    "recency_anchor": "content_as_of",
+    "new_project_days": 30,
+    "preferred_attention_days": 7,
+    "explanation_paragraphs": {
+      "minimum": 4,
+      "maximum": 6
+    },
+    "explanation_target_words": {
+      "minimum": 200,
+      "maximum": 350
+    },
+    "explanation_fields": [
+      "what_it_is",
+      "inputs_outputs",
+      "concrete_use_case",
+      "how_it_works",
+      "technical_value",
+      "dated_attention_evidence",
+      "available_artifacts",
+      "licenses",
+      "practical_limits"
     ]
   },
   "publishing": {
@@ -111,5 +137,15 @@
     "same_report_as_repository": true
   },
   "canonical_prompt": "DAILY_BRIEFING_PROMPT.md",
-  "configuration_is_executed_by_runner_not_site_builder": true
+  "configuration_is_executed_by_runner_not_site_builder": true,
+  "content_recency": {
+    "selection": "freshness_and_relevance_over_exact_issue_day",
+    "preferred_days": 7,
+    "maximum_days": 30,
+    "anchor": "content_as_of_first_actual_execution",
+    "pin_anchor_on_retry": true,
+    "backfill": "disclose_gathering_date_and_allow_current_recent_work_unless_explicit_historical_reconstruction",
+    "exact_publication_day_required": false,
+    "source_dates_must_be_truthful": true
+  }
 }
