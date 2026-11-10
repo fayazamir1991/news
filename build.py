@@ -102,6 +102,7 @@ def page(title, content):
     return f'''<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>{escape(title)} | دیده‌بان تصویر</title>
 <meta name="theme-color" content="#08665a">
+<meta name="google-site-verification" content="aqEiW6dBV0-dlx_m3a5RTEcv61kPb4-rVtOvdC0XI8U">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="دیده‌بان تصویر">
 <link rel="manifest" href="/manifest.webmanifest">
