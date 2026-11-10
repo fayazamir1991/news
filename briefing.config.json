@@ -23,6 +23,10 @@
   },
   "sections": [
     {
+      "title": "مقالهٔ مروری روز",
+      "maximum": 1
+    },
+    {
       "title": "پژوهش‌ها",
       "maximum": 10
     },
@@ -167,5 +171,27 @@
     ],
     "count_distinct_model_calls_and_retries": true,
     "never_double_count_reasoning_or_cached_subtotals": true
+  },
+  "daily_survey": {
+    "source": "arxiv",
+    "position": "first",
+    "target_count": 1,
+    "read_entire_paper": true,
+    "educational_recency_exception": true,
+    "avoid_repeating_arxiv_id": true,
+    "subsections": [
+      "توضیح و تحلیل مقاله",
+      "ترجمهٔ کامل مقدمه",
+      "ترجمهٔ کامل نتیجه‌گیری"
+    ],
+    "analysis_target_words": {
+      "minimum": 800,
+      "maximum": 1200
+    },
+    "translate_entire_introduction_and_conclusion": true,
+    "verify_public_translation_license": true,
+    "attribution_and_version_required": true,
+    "not_part_of_ten_new_research_items": true,
+    "missing_or_unreadable_policy": "choose_another_eligible_survey_or_explain_in_lead_without_fabrication"
   }
 }

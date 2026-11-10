@@ -23,14 +23,14 @@ class DailyBriefings(unittest.TestCase):
         date_label = title.rsplit(' ', 1)[0]
         repo_items = [f'### {date_label} · test/repo{i}\nتوضیح\n[مخزن](https://github.com/test/repo{i})' for i in range(repos)]
         file = self.content / f'{key}.md'
-        file.write_text('\n'.join([f'# {title}', 'لید', *(f'## {s}' for s in build.SECTIONS), *repo_items]))
+        file.write_text('\n'.join([f'# {title}', 'لید', *(f'## {s}' for s in build.NEWS_SECTIONS), *repo_items]))
         return file
 
     def test_full_day_and_same_day_weekly_archive(self):
         archive = '2026-11-09.md'
         (self.content / archive).write_text('\n'.join([
             '# ۱۲ تا ۱۸ آبان ۱۴۰۵', '<!-- weekly-end: 1405-08-18 -->',
-            *(f'## {s}' for s in list(build.SECTIONS)[:-1]),
+            *(f'## {s}' for s in list(build.NEWS_SECTIONS)[:-1]),
         ]))
         self.write_day(repos=5)
         self.write_day('1405-08-17')
@@ -53,6 +53,52 @@ class DailyBriefings(unittest.TestCase):
     def test_repository_limit(self):
         with self.assertRaisesRegex(ValueError, 'five GitHub'):
             build.parse(self.write_day(repos=6))
+
+    def survey_block(self):
+        return '\n'.join([
+            '## مقالهٔ مروری روز', '### ۱۸ آبان · درس ردیابی',
+            '#### توضیح و تحلیل مقاله', 'تحلیل خواندن کامل مقاله',
+            '#### ترجمهٔ کامل مقدمه', 'ترجمهٔ مقدمه <script>نمونه</script>',
+            '#### ترجمهٔ کامل نتیجه‌گیری', 'ترجمهٔ نتیجه‌گیری',
+            '[مقاله](https://arxiv.org/abs/2506.13457v1)', '',
+        ])
+
+    def test_daily_survey_first_with_subsections_and_stable_existing_bookmarks(self):
+        path = self.write_day(repos=1)
+        old = build.parse(path)
+        existing = build.story_record(old, 'گیت‌هاب', old['sections']['گیت‌هاب'][0])
+        path.write_text(path.read_text().replace('## پژوهش‌ها', self.survey_block() + '\n## پژوهش‌ها'))
+        issue = build.parse(path)
+        self.assertEqual(list(issue['sections']), list(build.SECTIONS))
+        html = build.issue_page(issue)
+        self.assertLess(html.index('<section id="survey"'), html.index('<section id="research"'))
+        self.assertIn('<h4>ترجمهٔ کامل مقدمه</h4>', html)
+        self.assertIn('&lt;script&gt;نمونه&lt;/script&gt;', html)
+        self.assertNotIn('#### ', html)
+        self.assertEqual(existing, build.story_record(issue, 'گیت‌هاب', issue['sections']['گیت‌هاب'][0]))
+        review = build.story_record(issue, build.SURVEY_SECTION, issue['sections'][build.SURVEY_SECTION][0])
+        self.assertNotIn('#### ', review['summary'])
+
+    def test_rejects_survey_after_news_or_multiple_surveys(self):
+        path = self.write_day()
+        content = path.read_text()
+        path.write_text(content + '\n' + self.survey_block())
+        with self.assertRaisesRegex(ValueError, 'out-of-order'):
+            build.parse(path)
+        doubled = self.survey_block().replace('## مقالهٔ مروری روز\n', '')
+        path.write_text(content.replace('## پژوهش‌ها', self.survey_block() + doubled + '\n## پژوهش‌ها'))
+        with self.assertRaisesRegex(ValueError, 'one daily survey'):
+            build.parse(path)
+
+    def test_rejects_missing_or_empty_survey_translation(self):
+        path = self.write_day()
+        content = path.read_text()
+        for broken in [self.survey_block().replace('#### ترجمهٔ کامل مقدمه', '#### مقدمه'),
+                       self.survey_block().replace('ترجمهٔ نتیجه‌گیری\n', '')]:
+            with self.subTest(block=broken):
+                path.write_text(content.replace('## پژوهش‌ها', broken + '\n## پژوهش‌ها'))
+                with self.assertRaisesRegex(ValueError, 'survey'):
+                    build.parse(path)
 
     def test_bookmark_ids_and_public_catalog(self):
         path = self.write_day(repos=1)

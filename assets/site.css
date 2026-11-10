@@ -35,3 +35,4 @@ button:disabled{opacity:.6;cursor:wait}
 #account-status{padding:.7rem 5vw;margin:0;background:#edf2ed}
 #bookmark-list article{display:block}.bookmark-meta{font-size:.85rem;color:#43554f}
 #bookmark-list h2{border:0;font-size:1.2rem}
+#survey h4{font-size:1.15rem;color:var(--teal);margin:2rem 0 .75rem;padding-top:.8rem;border-top:1px solid var(--rule)}
