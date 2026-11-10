@@ -4,6 +4,7 @@ import unittest
 from unittest.mock import patch
 
 import build
+import shutil
 
 
 class DailyBriefings(unittest.TestCase):
@@ -14,6 +15,7 @@ class DailyBriefings(unittest.TestCase):
         self.content = self.root / 'content' / 'briefings'
         self.content.mkdir(parents=True)
         (self.root / 'assets').mkdir()
+        shutil.copytree(build.ROOT / 'pwa', self.root / 'pwa')
 
     def write_day(self, key='1405-08-18', repos=0):
         title = build.solar_title(key)

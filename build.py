@@ -3,6 +3,8 @@ from html import escape
 from pathlib import Path
 import re
 import shutil
+import hashlib
+import json
 from urllib.parse import urlsplit
 
 ROOT = Path(__file__).resolve().parent
@@ -97,9 +99,18 @@ def parse(path):
 def page(title, content):
     return f'''<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>{escape(title)} | دیده‌بان تصویر</title>
+<meta name="theme-color" content="#08665a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="دیده‌بان تصویر">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/png" href="/icons/icon-192.png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<script src="/assets/app.js" defer></script>
 <link rel="stylesheet" href="/assets/site.css"></head><body><a class="skip" href="#main">رفتن به محتوا</a>
-<header><nav><a class="brand" href="/">دیده‌بان تصویر<span aria-hidden="true">.</span></a>
-<a href="/">آخرین شماره</a><a href="/archive/">آرشیو</a></nav></header>
+<header><nav><a class="brand" href="/"><img src="/icons/icon-192.png" width="38" height="38" alt="">دیده‌بان تصویر</a>
+<a href="/">آخرین شماره</a><a href="/archive/">آرشیو</a><button id="install-app" hidden>نصب روی گوشی</button></nav></header>
+<p id="install-help" hidden>در Safari دکمهٔ اشتراک‌گذاری را بزنید و «Add to Home Screen» را انتخاب کنید.</p>
+<p id="offline-status" role="status" hidden>آفلاین هستید؛ نسخهٔ ذخیره‌شده را می‌خوانید.</p>
 <main id="main">{content}</main><footer>دیده‌بان تصویر · خبرنامهٔ روزانهٔ بینایی ماشین و هوش مصنوعی</footer></body></html>'''
 
 
@@ -135,7 +146,10 @@ def build():
                     key=lambda item: (item['day_key'], item['daily']), reverse=True)
     if not issues:
         raise ValueError('At least one dated briefing is required')
+    if OUT.exists():
+        shutil.rmtree(OUT)
     shutil.copytree(ROOT / 'assets', OUT / 'assets', dirs_exist_ok=True)
+    shutil.copytree(ROOT / 'pwa', OUT, dirs_exist_ok=True)
     for issue in issues:
         write_page(f'issues/{issue["slug"]}/index.html', issue_page(issue))
     write_page('index.html', issue_page(issues[0]))
@@ -150,6 +164,15 @@ def build():
                    f'<span>خواندن گزارش ←</span></a></li>' for item in issues)
     preview_html = '<h2>نسخه‌های آزمایشی</h2><ul class="issues">' + ''.join(preview_rows) + '</ul>' if preview_rows else ''
     write_page('archive/index.html', page('آرشیو', f'<div class="intro"><h1>آرشیو گزارش‌ها</h1></div><ul class="issues">{rows}</ul>{preview_html}'))
+    paths = sorted(path for path in OUT.rglob('*') if path.is_file() and path.name != 'sw.js')
+    digest = hashlib.sha256()
+    for path in paths:
+        digest.update(path.relative_to(OUT).as_posix().encode())
+        digest.update(path.read_bytes())
+    shell = ['/', '/archive/', '/offline.html', '/manifest.webmanifest']
+    shell += ['/' + path.relative_to(OUT).as_posix() for path in paths if path.parts[-2] in ('assets', 'icons')]
+    worker = (OUT / 'sw.js').read_text().replace('__VERSION__', digest.hexdigest()[:20]).replace('__PRECACHE__', json.dumps(shell))
+    (OUT / 'sw.js').write_text(worker)
     print(f'Built {len(issues)} issue(s) in {OUT}')
 
 
