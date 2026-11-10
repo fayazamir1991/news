@@ -104,7 +104,7 @@ def page(title, content):
 
 
 def issue_page(issue):
-    edition = 'گزارش روزانه' if issue['daily'] else 'گزارش هفتگی آرشیوی'
+    edition = 'نسخهٔ آزمایشی روزانه' if issue.get('preview') else ('گزارش روزانه' if issue['daily'] else 'گزارش هفتگی آرشیوی')
     parts = [f'<div class="intro"><p class="kicker">{edition}</p><h1>{escape(issue["title"])}</h1>'
              f'<p class="deck">{escape(issue["intro"])}</p></div><nav class="sections" aria-label="بخش‌های شماره">']
     for title, stories in issue['sections'].items():
@@ -113,7 +113,8 @@ def issue_page(issue):
     for title, stories in issue['sections'].items():
         parts.append(f'<section id="{SECTIONS[title]}"><h2>{title}</h2>')
         if not stories:
-            parts.append('<p>برای این روز مورد تازه و مرتبطی تأیید نشد.</p>')
+            empty = 'این بخش در نمونهٔ آزمایشی مطلبی ندارد.' if issue.get('preview') else 'برای این روز مورد تازه و مرتبطی تأیید نشد.'
+            parts.append(f'<p>{empty}</p>')
         for i, item in enumerate(stories, 1):
             body = ''.join(f'<p>{escape(p)}</p>' for p in item['body'])
             parts.append(f'<article><span class="number">{fa(i):s}</span><div><h3>{escape(item["title"])}</h3>'
@@ -138,9 +139,17 @@ def build():
     for issue in issues:
         write_page(f'issues/{issue["slug"]}/index.html', issue_page(issue))
     write_page('index.html', issue_page(issues[0]))
+    previews = sorted((ROOT / 'content/previews').glob('*.md'), reverse=True)
+    preview_rows = []
+    for path in previews:
+        preview = parse(path)
+        preview['preview'] = True
+        write_page(f'previews/{preview["slug"]}/index.html', issue_page(preview))
+        preview_rows.append(f'<li><a href="/previews/{preview["slug"]}/">{escape(preview["title"])} · آزمایشی</a></li>')
     rows = ''.join(f'<li><a href="/issues/{item["slug"]}/"><strong>{escape(item["title"])}</strong>'
                    f'<span>خواندن گزارش ←</span></a></li>' for item in issues)
-    write_page('archive/index.html', page('آرشیو', f'<div class="intro"><h1>آرشیو گزارش‌ها</h1></div><ul class="issues">{rows}</ul>'))
+    preview_html = '<h2>نسخه‌های آزمایشی</h2><ul class="issues">' + ''.join(preview_rows) + '</ul>' if preview_rows else ''
+    write_page('archive/index.html', page('آرشیو', f'<div class="intro"><h1>آرشیو گزارش‌ها</h1></div><ul class="issues">{rows}</ul>{preview_html}'))
     print(f'Built {len(issues)} issue(s) in {OUT}')
 
 

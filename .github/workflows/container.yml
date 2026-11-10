@@ -28,3 +28,12 @@ jobs:
           curl -fsS "$base/archive/" -o /tmp/weekly-archive.html
           grep -q '/issues/' /tmp/weekly-archive.html
           curl -fsS "$base/assets/vazirmatn.woff2" -o /dev/null
+          if [ -d content/previews ]; then
+            for preview in content/previews/*.md; do
+              [ -f "$preview" ] || continue
+              slug=$(basename "$preview" .md)
+              curl -fsS "$base/previews/$slug/" -o /tmp/daily-preview.html
+              grep -q 'id="github"' /tmp/daily-preview.html
+              grep -q 'نسخهٔ آزمایشی روزانه' /tmp/daily-preview.html
+            done
+          fi
