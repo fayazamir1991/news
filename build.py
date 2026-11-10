@@ -43,6 +43,37 @@ def source_line(line):
     return f'<a class="source" rel="noopener noreferrer" href="{href}">{label} ↗</a>'
 
 
+def execution_summary(path):
+    """Render only verified runner/provider metadata; never estimate missing usage."""
+    sidecar = path.with_suffix('.execution.json')
+    if not sidecar.exists():
+        return ''
+    data = json.loads(sidecar.read_text(encoding='utf-8'))
+    if not isinstance(data, dict) or data.get('schema_version') != 1:
+        raise ValueError(f'{sidecar}: unsupported execution metadata')
+    parts = []
+    models = data.get('models', [])
+    if not isinstance(models, list) or any(not isinstance(m, str) or not m.strip() or len(m) > 128 for m in models):
+        raise ValueError(f'{sidecar}: expected verified model names')
+    if models:
+        if data.get('model_source') not in ('provider_response', 'runner_metadata'):
+            raise ValueError(f'{sidecar}: model provenance required')
+        parts.append('اجراشده با مدل ' + '، '.join(dict.fromkeys(models)))
+    tokens = data.get('tokens')
+    if tokens is not None:
+        if not isinstance(tokens, dict):
+            raise ValueError(f'{sidecar}: invalid token usage')
+        values = [tokens.get(k) for k in ('input', 'output', 'total')]
+        if any(type(v) is not int or v < 0 for v in values) or values[0] + values[1] != values[2]:
+            raise ValueError(f'{sidecar}: inconsistent token counts')
+        if tokens.get('source') not in ('provider_usage', 'runner_usage') or tokens.get('coverage') not in ('full_run', 'partial_run'):
+            raise ValueError(f'{sidecar}: usage provenance and coverage required')
+        count = lambda value: fa(f'{value:,}').replace(',', '٬')
+        label = 'مصرف توکن' if tokens['coverage'] == 'full_run' else 'مصرف ثبت‌شدهٔ بخشی از اجرا'
+        parts.append(f'{label}: {count(values[2])} (ورودی: {count(values[0])}، خروجی: {count(values[1])})')
+    return ' · '.join(parts)
+
+
 def parse(path):
     lines = [line.strip() for line in path.read_text().splitlines() if line.strip()]
     if not lines or not lines[0].startswith('# '):
@@ -95,7 +126,7 @@ def parse(path):
             if name == 'گیت‌هاب' and not any(re.search(r'href="https://github\.com/[^/?#"]+/[^/?#"]+/?["#?]', link) for link in item['sources']):
                 raise ValueError(f'{path}: include the direct GitHub repository link')
     return {'slug': path.stem, 'day_key': day_key, 'daily': not archived, 'title': title,
-            'intro': ' '.join(intro), 'sections': sections}
+            'intro': ' '.join(intro), 'sections': sections, 'execution': execution_summary(path)}
 
 
 def page(title, content):
@@ -150,6 +181,8 @@ def issue_page(issue):
                          f'{body}{"".join(item["images"])}<div class="links">{" ".join(item["sources"])}'
                          f'<button class="bookmark" data-item-id="{record["id"]}" aria-pressed="false" aria-label="ذخیرهٔ {escape(item["title"], quote=True)}">ذخیره</button></div></div></article>')
         parts.append('</section>')
+    if issue.get('execution'):
+        parts.append(f'<aside class="execution-summary" aria-label="مشخصات اجرای گزارش"><p>{escape(issue["execution"])}</p></aside>')
     parts.append('<a class="archive" href="/archive/">مشاهدهٔ آرشیو گزارش‌ها ←</a>')
     return page(issue['title'], ''.join(parts))
 

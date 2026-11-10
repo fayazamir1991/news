@@ -95,3 +95,54 @@ class DailyBriefings(unittest.TestCase):
         self.assertEqual(build.solar_title('1405-01-01'), '۱ فروردین ۱۴۰۵')
         with self.assertRaises(ValueError):
             build.solar_title('1405-08-31')
+
+    def test_execution_metadata_is_optional_and_preserves_bookmarks(self):
+        path = self.write_day(repos=1)
+        before = build.parse(path)
+        self.assertNotIn('execution-summary', build.issue_page(before))
+        path.with_suffix('.execution.json').write_text(json.dumps({
+            'schema_version': 1, 'models': ['test-model'], 'model_source': 'runner_metadata',
+            'tokens': {'input': 15000, 'output': 5000, 'total': 20000,
+                       'source': 'provider_usage', 'coverage': 'full_run'},
+        }))
+        after = build.parse(path)
+        html = build.issue_page(after)
+        self.assertIn('اجراشده با مدل test-model', html)
+        self.assertIn('مصرف توکن: ۲۰٬۰۰۰', html)
+        self.assertGreater(html.index('class="execution-summary"'), html.index('id="github"'))
+        self.assertEqual(build.story_record(before, 'گیت‌هاب', before['sections']['گیت‌هاب'][0])['id'],
+                         build.story_record(after, 'گیت‌هاب', after['sections']['گیت‌هاب'][0])['id'])
+
+    def test_execution_metadata_omits_unknowns_and_marks_partial_usage(self):
+        path = self.write_day()
+        metadata = path.with_suffix('.execution.json')
+        metadata.write_text(json.dumps({'schema_version': 1}))
+        self.assertNotIn('execution-summary', build.issue_page(build.parse(path)))
+        metadata.write_text(json.dumps({'schema_version': 1, 'tokens': {
+            'input': 20, 'output': 5, 'total': 25, 'source': 'runner_usage', 'coverage': 'partial_run'}}))
+        html = build.issue_page(build.parse(path))
+        self.assertIn('مصرف ثبت‌شدهٔ بخشی از اجرا: ۲۵', html)
+        self.assertNotIn('اجراشده با مدل', html)
+        self.assertNotIn('در دسترس نیست', html)
+
+    def test_execution_metadata_rejects_false_totals_and_unverified_models(self):
+        path = self.write_day()
+        metadata = path.with_suffix('.execution.json')
+        for counts in [(10, 5, 20), (True, 5, 6), (-1, 5, 4), (None, 5, 5)]:
+            with self.subTest(counts=counts):
+                metadata.write_text(json.dumps({'schema_version': 1, 'tokens': {
+                    **dict(zip(('input', 'output', 'total'), counts)),
+                    'source': 'provider_usage', 'coverage': 'full_run'}}))
+                with self.assertRaisesRegex(ValueError, 'token counts'):
+                    build.parse(path)
+        metadata.write_text(json.dumps({'schema_version': 1, 'models': ['example']}))
+        with self.assertRaisesRegex(ValueError, 'provenance'):
+            build.parse(path)
+
+    def test_execution_metadata_escapes_model_text(self):
+        path = self.write_day()
+        path.with_suffix('.execution.json').write_text(json.dumps({
+            'schema_version': 1, 'models': ['<script>bad</script>'], 'model_source': 'provider_response'}))
+        html = build.issue_page(build.parse(path))
+        self.assertIn('&lt;script&gt;bad&lt;/script&gt;', html)
+        self.assertNotIn('<script>bad</script>', html)
