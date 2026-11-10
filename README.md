@@ -16,6 +16,7 @@
 |---|---|
 | [DAILY_BRIEFING_PROMPT.md](DAILY_BRIEFING_PROMPT.md) | مرجع کامل تحریریه و اجرای عامل، مستقل از مدل |
 | [briefing.config.json](briefing.config.json) | مقصد، زمان تهران، تعدادها، بازهٔ ترند و قرارداد انتشار؛ بدون secret |
+| [GITHUB_DISCOVERY_SOURCES.md](GITHUB_DISCOVERY_SOURCES.md) | منابع GitHub Trending، Trendshift و منابع مکمل با روش بررسی و محدودیت شاهد |
 | [AGENTS.md](AGENTS.md) | نقطهٔ ورود عامل‌های کدنویسی |
 | [PUBLISHING.md](PUBLISHING.md) | قالب دقیق سازگار با parser و چرخهٔ انتشار |
 | [AUTH_SETUP.md](AUTH_SETUP.md) | Google login، Supabase، بوکمارک و برندینگ |
