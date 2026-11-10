@@ -192,6 +192,45 @@
     "verify_public_translation_license": true,
     "attribution_and_version_required": true,
     "not_part_of_ten_new_research_items": true,
-    "missing_or_unreadable_policy": "choose_another_eligible_survey_or_explain_in_lead_without_fabrication"
+    "missing_or_unreadable_policy": "choose_another_eligible_survey_or_explain_in_lead_without_fabrication",
+    "directory": "content/surveys",
+    "archive_route": "/surveys/",
+    "article_route": "/surveys/<arxiv_id>/",
+    "daily_teaser_paragraphs": 1,
+    "full_content_on_dedicated_page": true,
+    "same_bookmark_id_on_teaser_and_article": true,
+    "metadata_fields": [
+      "arxiv_id",
+      "first_issue",
+      "summary"
+    ],
+    "subsection_heading_level": 2
+  },
+  "navigation": {
+    "account_route": "/account/",
+    "mobile_order": "right_to_left",
+    "mobile_items": [
+      {
+        "label": "آرشیو",
+        "href": "/archive/"
+      },
+      {
+        "label": "مروری‌ها",
+        "href": "/surveys/"
+      },
+      {
+        "label": "خانه",
+        "href": "/"
+      },
+      {
+        "label": "حساب",
+        "href": "/account/"
+      },
+      {
+        "label": "ذخیره‌ها",
+        "href": "/bookmarks/"
+      }
+    ],
+    "desktop_surveys_link": true
   }
 }

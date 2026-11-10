@@ -55,10 +55,10 @@
   }
 
   function render() {
-    login.hidden = !!session;
-    logout.hidden = !session;
-    name.hidden = !session;
-    name.textContent = session?.user.email || '';
+    if (login) login.hidden = !!session;
+    if (logout) logout.hidden = !session;
+    if (name) name.hidden = !session;
+    if (name) name.textContent = session?.user.email || '';
     if (list) {
       list.replaceChildren();
       message.textContent = !session ? 'برای دیدن لیست اختصاصی خود وارد حساب Google شوید.'
@@ -140,7 +140,7 @@
   async function signIn() {
     if (!configured) { announce('ورود به حساب هنوز توسط مدیر سایت فعال نشده است.'); return; }
     if (!navigator.onLine) { announce('برای ورود با Google به اینترنت وصل شوید.'); return; }
-    login.disabled = true;
+    if (login) login.disabled = true;
     try {
       if (!client) await initialize();
       const settings = await fetch(config.url + '/auth/v1/settings', { headers: { apikey: config.publishableKey } });
@@ -157,7 +157,7 @@
       if (error) throw error;
     } catch {
       announce('ورود انجام نشد. اتصال اینترنت را بررسی و دوباره تلاش کنید.');
-    } finally { login.disabled = false; }
+    } finally { if (login) login.disabled = false; }
   }
 
   async function toggleBookmark(button) {
@@ -221,8 +221,8 @@
     return initialization;
   }
 
-  login.addEventListener('click', signIn);
-  logout.addEventListener('click', async () => {
+  login?.addEventListener('click', signIn);
+  logout?.addEventListener('click', async () => {
     logout.disabled = true;
     try {
       const { error } = await client.auth.signOut({ scope: 'local' });

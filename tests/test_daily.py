@@ -192,3 +192,74 @@ class DailyBriefings(unittest.TestCase):
         html = build.issue_page(build.parse(path))
         self.assertIn('&lt;script&gt;bad&lt;/script&gt;', html)
         self.assertNotIn('<script>bad</script>', html)
+
+
+    def dedicated_survey(self):
+        path = self.write_day(repos=1)
+        metadata = {'arxiv_id': '2506.13457', 'first_issue': '1405-08-18', 'summary': 'موضوع و ارزش خواندن مقاله'}
+        directory = self.root / 'content/surveys'
+        directory.mkdir(parents=True, exist_ok=True)
+        survey = directory / '2506.13457.md'
+        survey.write_text('# درس ردیابی\n<!-- survey: ' + json.dumps(metadata, ensure_ascii=False) + ' -->\n' + '\n'.join('## ' + heading + '\nمتن کامل ' + heading for heading in build.SURVEY_HEADINGS) + '\n[مقاله](https://arxiv.org/abs/2506.13457v1)')
+        inline = self.survey_block()
+        path.write_text(path.read_text().replace('## پژوهش‌ها', inline + '\n## پژوهش‌ها'))
+        issue = build.parse(path)
+        before = build.story_record(issue, build.SURVEY_SECTION, issue['sections'][build.SURVEY_SECTION][0])
+        teaser = '## مقالهٔ مروری روز\n### ۱۸ آبان · درس ردیابی\n' + metadata['summary'] + '\n[مقاله](https://arxiv.org/abs/2506.13457v1)\n[مطالعهٔ مقاله](/surveys/2506.13457/)\n'
+        path.write_text(path.read_text().replace(inline, teaser))
+        return path, survey, before
+
+    def test_dedicated_survey_teaser_archive_and_stable_id(self):
+        path, survey, before = self.dedicated_survey()
+        out = self.root / 'dist'
+        with patch.object(build, 'ROOT', self.root), patch.object(build, 'OUT', out):
+            build.build()
+        home = (out / 'index.html').read_text()
+        full = (out / 'surveys/2506.13457/index.html').read_text()
+        self.assertNotIn('متن کامل', home)
+        self.assertNotIn('ترجمهٔ کامل مقدمه', home)
+        self.assertIn('متن کامل ترجمهٔ کامل مقدمه', full)
+        self.assertIn('موضوع و ارزش خواندن مقاله', home)
+        self.assertIn('موضوع و ارزش خواندن مقاله', (out / 'surveys/index.html').read_text())
+        records = json.loads((out / 'items.json').read_text())
+        self.assertIn(before['id'], records)
+        self.assertEqual(records[before['id']]['url'], '/surveys/2506.13457/#item-' + before['id'])
+        self.assertIn('data-item-id="' + before['id'] + '"', full)
+        self.assertEqual(len(records), 2)
+        self.assertIn('id="sign-in"', (out / 'account/index.html').read_text())
+        self.assertNotIn('id="sign-in"', home)
+
+    def test_rejects_missing_or_mismatched_dedicated_survey(self):
+        path, survey, _ = self.dedicated_survey()
+        valid = survey.read_text()
+        for broken in [valid.replace('موضوع و ارزش خواندن مقاله', 'خلاصهٔ متفاوت'), valid.replace('2506.13457v1', '2506.13457v2')]:
+            survey.write_text(broken)
+            with patch.object(build, 'ROOT', self.root), patch.object(build, 'OUT', self.root / 'dist'):
+                with self.assertRaisesRegex(ValueError, 'survey reference'):
+                    build.build()
+        survey.unlink()
+        with patch.object(build, 'ROOT', self.root), patch.object(build, 'OUT', self.root / 'dist'):
+            with self.assertRaisesRegex(ValueError, 'survey reference'):
+                build.build()
+
+    def test_validates_complete_survey_and_single_teaser_paragraph(self):
+        path, survey, _ = self.dedicated_survey()
+        survey.write_text(survey.read_text().replace('متن کامل ترجمهٔ کامل مقدمه', ''))
+        with self.assertRaisesRegex(ValueError, 'complete translations'):
+            build.parse_survey(survey)
+        path.write_text(path.read_text().replace('موضوع و ارزش خواندن مقاله', 'موضوع و ارزش خواندن مقاله\nبند اضافی'))
+        with self.assertRaisesRegex(ValueError, 'one paragraph'):
+            build.parse(path)
+
+    def test_internal_survey_links_and_mobile_navigation(self):
+        self.assertIn('href="/surveys/2506.13457/"', build.source_line('[مقاله](/surveys/2506.13457/)'))
+        for url in ['/surveys/../', '/surveys/a/../../', '/surveys/evil?x=1/', '/surveys/evil#x/', '/surveys/a%2f../']:
+            with self.subTest(url=url), self.assertRaisesRegex(ValueError, 'Invalid survey'):
+                build.source_line('[مقاله](' + url + ')')
+        html = build.navigation('surveys', mobile=True)
+        destinations = ['/archive/', '/surveys/', '/', '/account/', '/bookmarks/']
+        import re
+        self.assertEqual(re.findall(r'href="([^"]+)"', html), destinations)
+        self.assertEqual(re.findall(r'<span>(.*?)</span>', html), ['آرشیو', 'مروری‌ها', 'خانه', 'حساب', 'ذخیره‌ها'])
+        self.assertEqual(html.count('aria-current="page"'), 1)
+        self.assertIn('aria-label="مقالات مروری" aria-current="page"', html)

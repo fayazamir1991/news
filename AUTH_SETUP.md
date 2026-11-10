@@ -14,7 +14,7 @@ The `bookmarks` migration has already been applied to the hosted project. `supab
    `https://arkukeyeoobhbsqgiapv.supabase.co/auth/v1/callback`
 3. In [Supabase provider settings](https://supabase.com/dashboard/project/arkukeyeoobhbsqgiapv/auth/providers), enable Google and enter the Google Client ID and Client Secret there. Keep the secret out of chat and GitHub.
 4. In Supabase Authentication → URL Configuration, set Site URL to `https://visionwatcher.vercel.app`. Add the exact application callback `https://visionwatcher.vercel.app/auth/callback/` to the redirect allow list. Avoid broad preview-domain wildcards for production.
-5. Open the site → ورود با Google. Verify the full consent/return flow, save an item and open ذخیره‌شده‌ها on another device using the same Google account. A second account must have its own independent list.
+5. Open the site → حساب → ورود با Google. Verify the full consent/return flow, save an item and open ذخیره‌شده‌ها on another device using the same Google account. A second account must have its own independent list.
 
 Creating the database does not enable Google OAuth. Until enabled, the site explains that Google setup is incomplete. OAuth callback pages and query parameters never enter the service-worker cache. Private cross-origin Supabase requests are not cached by the worker. Logout clears private UI. Saved item IDs remain in the database when reports change; deleted reports appear as unavailable entries that the user can remove.
 
@@ -35,3 +35,5 @@ Sources: [Google provider](https://supabase.com/docs/guides/auth/social-login/au
 - Terms of service: `https://visionwatcher.vercel.app/terms/`
 
 The Google authorized redirect URI remains the Supabase callback above; it is different from the application's callback allowlisted in Supabase.
+
+Account controls and PWA installation live at `/account/`. Bookmarks remain at `/bookmarks/`; daily survey cards and their dedicated pages share the original item ID. Navigation rearrangement does not change OAuth callbacks, scopes, session storage, RLS or provider configuration.

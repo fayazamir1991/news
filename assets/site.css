@@ -36,3 +36,27 @@ button:disabled{opacity:.6;cursor:wait}
 #bookmark-list article{display:block}.bookmark-meta{font-size:.85rem;color:#43554f}
 #bookmark-list h2{border:0;font-size:1.2rem}
 #survey h4{font-size:1.15rem;color:var(--teal);margin:2rem 0 .75rem;padding-top:.8rem;border-top:1px solid var(--rule)}
+/* Account controls have a dedicated page; mobile navigation stays compact. */
+.desktop-nav{display:flex;gap:1.15rem;align-items:center;font-size:.88rem}
+.desktop-nav a{white-space:nowrap;color:#43554f}.desktop-nav a[aria-current="page"]{color:var(--teal);font-weight:800}
+.bottom-nav{display:none}
+.survey-list{padding:0;list-style:none;margin:1rem 0 3rem}.survey-list li{border-bottom:1px solid var(--rule);padding:1.5rem 0}
+.survey-list a{text-decoration:none;display:block}.survey-list h2{font-size:1.4rem;line-height:1.8;border:0;padding:.3rem 0}
+.survey-list p{color:#43554f;max-width:47rem}.read-more{display:inline-block;margin-top:.7rem;font-weight:700}
+.survey-article{display:block;padding-top:0}.survey-article p{margin-block:1rem;text-align:start;overflow-wrap:anywhere}
+.survey-article h2{font-size:1.5rem;line-height:1.8}.survey-article section{scroll-margin-top:1.5rem}
+#survey h3 a{text-decoration:none}.survey-link{font-weight:750}.account-panel{margin:1.5rem 0 2rem;padding:1.25rem;background:#edf2ed;border:1px solid var(--rule);border-radius:.85rem}
+.account-panel h2{font-size:1.3rem;border:0}.account-panel .links{margin-top:1rem}#account-name{font-size:.95rem;text-align:right}
+button:focus-visible{outline:3px solid #ce6b25;outline-offset:4px}
+@media(max-width:760px){
+ body{padding-bottom:calc(5rem + env(safe-area-inset-bottom,0px))}
+ header nav{min-height:4.25rem;justify-content:center;padding-block:.65rem}
+ .brand{margin:0;font-size:1.25rem}.brand img{width:32px;height:32px}
+ .desktop-nav{display:none}
+ .bottom-nav{position:fixed;z-index:20;bottom:0;inset-inline:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));direction:rtl;align-items:stretch;background:#fffefa;border-top:1px solid var(--rule);box-shadow:0 -4px 20px #172e2b0a;padding:.35rem .3rem calc(.35rem + env(safe-area-inset-bottom,0px))}
+ .bottom-nav a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.15rem;min-height:3.6rem;min-width:0;border-radius:.7rem;color:#62736d;text-decoration:none;line-height:1.5;font-size:.72rem;white-space:nowrap;-webkit-tap-highlight-color:transparent}
+ .bottom-nav svg{width:23px;height:23px;flex-shrink:0}.bottom-nav a[aria-current="page"]{background:#e4f1eb;color:var(--teal);font-weight:800}
+ .bottom-nav a:active{background:#e4f1eb}.bottom-nav a[href="/"] svg{stroke-width:2}
+ .sections{font-size:.86rem;gap:.55rem 1rem}.intro{padding-top:1.7rem}h1{font-size:clamp(1.7rem,7vw,2.5rem);letter-spacing:-.025em}
+ .deck{font-size:1rem}.survey-article h2{font-size:1.25rem}.survey-list h2{font-size:1.2rem}footer{margin-top:1rem}
+}
