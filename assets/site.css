@@ -28,3 +28,10 @@ footer{border-block-start:1px solid var(--rule);padding-block:1.5rem;color:#4c60
 img{max-width:100%;height:auto}figure{margin:1rem 0}.skip{position:absolute;transform:translateY(-180%);background:white;padding:.3rem}.skip:focus{transform:none}
 @media(max-width:480px){header nav{gap:.8rem}.sections{gap:.75rem}article{grid-template-columns:1.65rem minmax(0,1fr)}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+header nav{padding-block:.7rem}#sign-in,#sign-out,.bookmark{font:inherit;font-size:.85rem;border:1px solid var(--teal);border-radius:.4rem;background:transparent;color:var(--teal);padding:.2rem .65rem;cursor:pointer}
+.bookmark[aria-pressed="true"]{background:var(--teal);color:white}
+button:disabled{opacity:.6;cursor:wait}
+#account-name{font-size:.75rem;direction:ltr;overflow-wrap:anywhere}
+#account-status{padding:.7rem 5vw;margin:0;background:#edf2ed}
+#bookmark-list article{display:block}.bookmark-meta{font-size:.85rem;color:#43554f}
+#bookmark-list h2{border:0;font-size:1.2rem}

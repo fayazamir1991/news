@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 import build
 import shutil
+import json
 
 
 class DailyBriefings(unittest.TestCase):
@@ -38,7 +39,7 @@ class DailyBriefings(unittest.TestCase):
             build.build()
         html = (out / 'index.html').read_text()
         self.assertEqual(html, (out / 'issues/1405-08-18/index.html').read_text())
-        self.assertEqual(html.count('<article>'), 5)
+        self.assertEqual(html.count('<article id="item-'), 5)
         self.assertIn('id="github"', html)
         self.assertIn('مورد تازه و مرتبطی تأیید نشد', html)
         self.assertIn('۱۸ آبان ۱۴۰۵', html)
@@ -52,6 +53,30 @@ class DailyBriefings(unittest.TestCase):
     def test_repository_limit(self):
         with self.assertRaisesRegex(ValueError, 'five GitHub'):
             build.parse(self.write_day(repos=6))
+
+    def test_bookmark_ids_and_public_catalog(self):
+        path = self.write_day(repos=1)
+        out = self.root / 'dist'
+        with patch.object(build, 'ROOT', self.root), patch.object(build, 'OUT', out):
+            build.build()
+            first = json.loads((out / 'items.json').read_text())
+            key, record = next(iter(first.items()))
+            self.assertRegex(key, r'^[a-f0-9]{64}$')
+            self.assertEqual(record['url'], f'/issues/1405-08-18/#item-{key}')
+            self.assertNotIn('user_id', record)
+            self.assertIn('id="bookmark-list"', (out / 'bookmarks/index.html').read_text())
+            self.assertTrue((out / 'auth/callback/index.html').exists())
+            path.write_text(path.read_text().replace('توضیح', 'توضیح تازه'))
+            build.build()
+            self.assertEqual(list(first), list(json.loads((out / 'items.json').read_text())))
+
+    def test_refuses_secret_client_key(self):
+        self.write_day()
+        with patch.object(build, 'ROOT', self.root), patch.object(build, 'OUT', self.root / 'dist'), patch.dict('os.environ', {
+            'SUPABASE_URL': 'https://example.supabase.co', 'SUPABASE_PUBLISHABLE_KEY': 'sb_secret_do-not-expose'
+        }):
+            with self.assertRaisesRegex(ValueError, 'publishable key'):
+                build.build()
 
     def test_mismatched_story_day(self):
         path = self.write_day(repos=1)

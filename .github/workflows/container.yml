@@ -36,6 +36,7 @@ jobs:
           grep -q '/issues/' /tmp/weekly-archive.html
           curl -fsS "$base/assets/vazirmatn.woff2" -o /dev/null
           node tests/pwa-browser.cjs
+          node tests/bookmarks-browser.cjs
           if [ -d content/previews ]; then
             for preview in content/previews/*.md; do
               [ -f "$preview" ] || continue
