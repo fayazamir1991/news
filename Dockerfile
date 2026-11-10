@@ -1,6 +1,7 @@
 FROM python:3.13-alpine AS builder
 WORKDIR /site
 COPY build.py ./
+COPY legal.py ./
 COPY auth-public.json ./
 COPY assets ./assets
 COPY content ./content

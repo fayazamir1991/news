@@ -7,6 +7,7 @@ import hashlib
 import json
 import os
 from urllib.parse import urlsplit
+from legal import PRIVACY, TERMS
 
 ROOT = Path(__file__).resolve().parent
 OUT = ROOT / 'dist'
@@ -117,7 +118,8 @@ def page(title, content):
 <p id="account-status" role="status" hidden></p>
 <p id="install-help" hidden>در Safari دکمهٔ اشتراک‌گذاری را بزنید و «Add to Home Screen» را انتخاب کنید.</p>
 <p id="offline-status" role="status" hidden>آفلاین هستید؛ نسخهٔ ذخیره‌شده را می‌خوانید.</p>
-<main id="main">{content}</main><footer>دیده‌بان تصویر · خبرنامهٔ روزانهٔ بینایی ماشین و هوش مصنوعی</footer></body></html>'''
+<main id="main">{content}</main><footer>دیده‌بان تصویر · خبرنامهٔ روزانهٔ بینایی ماشین و هوش مصنوعی
+<nav aria-label="اطلاعات سایت"><a href="/privacy/">حریم خصوصی</a> · <a href="/terms/">شرایط استفاده</a></nav></footer></body></html>'''
 
 
 def story_record(issue, section, item):
@@ -191,6 +193,8 @@ def build():
     write_page('bookmarks/index.html', page('ذخیره‌شده‌ها', '<div class="intro"><h1>ذخیره‌شده‌ها</h1>'
                '<p id="bookmarks-message">برای دیدن لیست اختصاصی خود وارد حساب Google شوید.</p></div><div id="bookmark-list"></div>'))
     write_page('auth/callback/index.html', page('ورود به حساب', '<div class="intro"><h1>ورود به حساب</h1><p>در حال بررسی ورود…</p></div>'))
+    write_page('privacy/index.html', page('سیاست حریم خصوصی', PRIVACY))
+    write_page('terms/index.html', page('شرایط استفاده', TERMS))
     write_page('index.html', issue_page(issues[0]))
     previews = sorted((ROOT / 'content/previews').glob('*.md'), reverse=True)
     preview_rows = []
