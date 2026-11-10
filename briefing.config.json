@@ -1,0 +1,41 @@
+{
+  "config_version": 1,
+  "repository": "fayazamir1991/news",
+  "default_branch": "main",
+  "site_url": "https://visionwatcher.vercel.app",
+  "language": "fa",
+  "timezone": "Asia/Tehran",
+  "schedule": {
+    "local_time": "00:05",
+    "target_day": "previous_calendar_day_of_original_scheduled_for",
+    "runner": "external",
+    "create_duplicate_scheduler": false
+  },
+  "display_dates": {"calendar": "persian", "digits": "persian", "month": "persian_name"},
+  "file_dates": {"calendar": "persian", "digits": "latin", "format": "YYYY-MM-DD"},
+  "sections": [
+    {"title": "پژوهش‌ها", "maximum": 10},
+    {"title": "بینایی ماشین", "maximum": 5},
+    {"title": "هوش مصنوعی", "maximum": 5},
+    {"title": "گیت‌هاب", "maximum": 5}
+  ],
+  "github_discovery": {
+    "new_project_days_including_target": 30,
+    "recent_attention_days_including_target": 7,
+    "routine_commits_qualify": false,
+    "total_stars_prove_trending": false,
+    "repeat_without_substantive_new_event": false
+  },
+  "publishing": {
+    "directory": "content/briefings",
+    "branch_prefix": "daily/",
+    "use_pull_request": true,
+    "merge_after_exact_head_ci_success": true,
+    "ci_workflow_name": "Build and smoke-test website",
+    "overwrite_published_issue": false,
+    "owner_authorization_required": true
+  },
+  "delivery": {"channel": "authorized_runner_output", "same_report_as_repository": true},
+  "canonical_prompt": "DAILY_BRIEFING_PROMPT.md",
+  "configuration_is_executed_by_runner_not_site_builder": true
+}
