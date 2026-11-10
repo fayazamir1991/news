@@ -202,9 +202,19 @@
     "metadata_fields": [
       "arxiv_id",
       "first_issue",
-      "summary"
+      "summary",
+      "paper_date",
+      "paper_date_kind",
+      "paper_date_source"
     ],
-    "subsection_heading_level": 2
+    "subsection_heading_level": 2,
+    "paper_date_kinds": [
+      "submitted",
+      "published"
+    ],
+    "paper_date_primary_evidence_required": true,
+    "paper_date_on_daily_card_and_article": true,
+    "direct_sources_position": "separate_panel_next_to_table_of_contents_before_full_text"
   },
   "navigation": {
     "account_route": "/account/",

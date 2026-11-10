@@ -23,11 +23,16 @@ const assert = require('node:assert/strict');
       assert(boxes.slice(1).every((b, i) => b.x < boxes[i].x));
       assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
       assert.equal(await nav.locator('[aria-current="page"]').getAttribute('href'), '/');
+      assert.match(await page.locator('#survey .survey-dates').innerText(), /^(ارسال به arXiv|انتشار مقاله): [۰-۹]+/);
     }
     await page.locator('.bottom-nav a[href="/surveys/"]').click();
     assert.equal(await page.locator('h1').innerText(), 'مقالات مروری');
     await page.locator('.survey-list a').first().click();
     assert.equal(await page.locator('.survey-article h2').count(), 3);
+    assert.match(await page.locator('.intro .survey-dates').innerText(), /(ارسال به arXiv|انتشار مقاله): [۰-۹]+/);
+    assert((await page.locator('.survey-sources a').count()) >= 1);
+    assert.equal(await page.locator('.survey-article a.source').count(), 0);
+    assert(await page.locator('.survey-sources').evaluate(node => node.getBoundingClientRect().top < document.querySelector('.survey-article').getBoundingClientRect().top));
     assert(await page.locator('.survey-article').innerText().then(s => s.includes('ترجمهٔ کامل مقدمه')));
     assert.equal(await page.locator('.bottom-nav [aria-current="page"]').getAttribute('href'), '/surveys/');
     assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
