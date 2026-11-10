@@ -47,7 +47,7 @@ const { execFileSync } = require('node:child_process');
     }
     const ios = await browser.newContext({ userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Version/18.0 Mobile/15E148 Safari/604.1' });
     const phone = await ios.newPage();
-    await phone.goto(origin);
+    await phone.goto(origin + '/account/');
     await phone.locator('#install-app').click();
     assert(await phone.locator('#install-help').isVisible());
     console.log('PASS: manifest, icons, mobile layout, offline report, offline fallback, iPhone installation help');

@@ -17,7 +17,7 @@ SURVEY_HEADINGS = ('توضیح و تحلیل مقاله', 'ترجمهٔ کامل
 SECTIONS = {SURVEY_SECTION: 'survey', **NEWS_SECTIONS}
 MONTHS = 'فروردین اردیبهشت خرداد تیر مرداد شهریور مهر آبان آذر دی بهمن اسفند'.split()
 ARCHIVE_DATE = re.compile(r'<!-- weekly-end: ([0-9]{4}-[0-9]{2}-[0-9]{2}) -->')
-LINK = re.compile(r'(!?)\[([^\]]+)\]\((https?://[^\s]+)\)')
+LINK = re.compile(r'(!?)\[([^\]]+)\]\((https?://[^\s]+|/surveys/[^\s]+)\)')
 
 
 def fa(value):
@@ -38,6 +38,10 @@ def source_line(line):
     if not found:
         return None
     image, label, url = found.groups()
+    if url.startswith('/'):
+        if image or not re.fullmatch(r'/surveys/[a-z0-9][a-z0-9.-]*/', url) or '..' in url:
+            raise ValueError('Invalid survey link: ' + url)
+        return f'<a class="survey-link" href="{escape(url, quote=True)}">{escape(label)} ←</a>'
     if not urlsplit(url).hostname:
         raise ValueError('Invalid source URL: ' + url)
     href, label = escape(url, quote=True), escape(label, quote=True)
@@ -113,6 +117,11 @@ def parse(path):
             link = source_line(line)
             if link:
                 story['images' if line.startswith('!') else 'sources'].append(link)
+                if 'class="survey-link"' in link:
+                    slug = re.search(r'href="/surveys/([^/]+)/"', link).group(1)
+                    if section != SURVEY_SECTION or story.get('survey_slug'):
+                        raise ValueError(f'{path}: unexpected or duplicate survey link')
+                    story['survey_slug'] = slug
             else:
                 story['body'].append(line)
     expected = (list(NEWS_SECTIONS)[:-1] if archived else
@@ -131,7 +140,12 @@ def parse(path):
                 raise ValueError(f'{path}: article date must match the issue date')
             if name == 'گیت‌هاب' and not any(re.search(r'href="https://github\.com/[^/?#"]+/[^/?#"]+/?["#?]', link) for link in item['sources']):
                 raise ValueError(f'{path}: include the direct GitHub repository link')
-            if name == SURVEY_SECTION:
+            if name == SURVEY_SECTION and item.get('survey_slug'):
+                if len(item['body']) != 1 or item['body'][0].startswith('#'):
+                    raise ValueError(f'{path}: survey teaser needs exactly one paragraph')
+                if not re.search(r'href="https://arxiv.org/(abs|html|pdf)/', item['sources'][0]):
+                    raise ValueError(f'{path}: keep the original arXiv source first')
+            elif name == SURVEY_SECTION:
                 headings = [line[5:] for line in item['body'] if line.startswith('#### ')]
                 if headings != list(SURVEY_HEADINGS):
                     raise ValueError(f'{path}: survey needs analysis and two complete translation headings')
@@ -142,7 +156,65 @@ def parse(path):
             'intro': ' '.join(intro), 'sections': sections, 'execution': execution_summary(path)}
 
 
-def page(title, content):
+
+def parse_survey(path):
+    if not re.fullmatch(r'[a-z0-9][a-z0-9.-]*', path.stem) or '..' in path.stem:
+        raise ValueError(f'{path}: invalid survey slug')
+    lines = [line.strip() for line in path.read_text(encoding='utf-8').splitlines() if line.strip()]
+    if len(lines) < 3 or not lines[0].startswith('# '):
+        raise ValueError(f'{path}: missing survey title')
+    metadata = re.fullmatch(r'<!-- survey: (.+) -->', lines[1])
+    if not metadata:
+        raise ValueError(f'{path}: missing survey metadata')
+    data = json.loads(metadata.group(1))
+    if not isinstance(data, dict) or not all(isinstance(data.get(k), str) and data[k].strip() for k in ('arxiv_id', 'first_issue', 'summary')):
+        raise ValueError(f'{path}: invalid survey metadata')
+    if data['arxiv_id'] != path.stem or any(c in data['summary'] for c in '\r\n'):
+        raise ValueError(f'{path}: invalid survey identity or summary')
+    solar_title(data['first_issue'])
+    sections, sources, images = {}, [], []
+    current = None
+    for line in lines[2:]:
+        if line.startswith('## '):
+            current = line[3:]
+            if current not in SURVEY_HEADINGS or current in sections:
+                raise ValueError(f'{path}: unexpected survey subsection')
+            sections[current] = []
+        else:
+            link = source_line(line)
+            if link:
+                if 'class="survey-link"' in link:
+                    raise ValueError(f'{path}: survey sources must be external')
+                (images if line.startswith('!') else sources).append(link)
+            elif current:
+                sections[current].append(line)
+            else:
+                raise ValueError(f'{path}: paragraph before survey subsection')
+    if list(sections) != list(SURVEY_HEADINGS) or not all(sections.values()) or not sources:
+        raise ValueError(f'{path}: survey needs analysis, complete translations and sources')
+    return {**data, 'slug': path.stem, 'title': lines[0][2:], 'sections': sections, 'sources': sources, 'images': images}
+
+
+NAV_ITEMS = (
+    ('archive', '/archive/', 'آرشیو', 'آرشیو گزارش‌ها', '<rect x="4" y="4" width="16" height="4" rx="1"/><path d="M5 8v12h14V8M9 12h6"/>'),
+    ('surveys', '/surveys/', 'مروری‌ها', 'مقالات مروری', '<path d="M12 5v15M12 5C8 2 3 4 3 4v15s5-2 9 1c4-3 9-1 9-1V4s-5-2-9 1Z"/>'),
+    ('home', '/', 'خانه', 'خانه؛ آخرین شماره', '<path d="m3 10 9-7 9 7M5 9v12h14V9M9 21v-8h6v8"/>'),
+    ('account', '/account/', 'حساب', 'حساب کاربری', '<circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/>'),
+    ('bookmarks', '/bookmarks/', 'ذخیره‌ها', 'ذخیره‌شده‌ها', '<path d="M6 3h12v18l-6-4-6 4Z"/>'),
+)
+
+
+def navigation(active, mobile=False):
+    links = []
+    for key, url, short, full, icon in NAV_ITEMS:
+        current = ' aria-current="page"' if key == active else ''
+        graphic = f'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{icon}</svg>' if mobile else ''
+        label = short if mobile else ('آخرین شماره' if key == 'home' else full)
+        links.append(f'<a href="{url}" aria-label="{full}"{current}>{graphic}<span>{label}</span></a>')
+    return ''.join(links)
+
+
+def page(title, content, active=None):
     return f'''<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>{escape(title)} | دیده‌بان تصویر</title>
 <meta name="theme-color" content="#08665a">
@@ -156,10 +228,9 @@ def page(title, content):
 <script src="/assets/account-config.js" defer></script>
 <script src="/assets/account.js" defer></script>
 <link rel="stylesheet" href="/assets/site.css"></head><body><a class="skip" href="#main">رفتن به محتوا</a>
-<header><nav><a class="brand" href="/"><img src="/icons/icon-192.png" width="38" height="38" alt="">دیده‌بان تصویر</a>
-<a href="/">آخرین شماره</a><a href="/archive/">آرشیو</a><a href="/bookmarks/">ذخیره‌شده‌ها</a>
-<button id="sign-in">ورود با Google</button><span id="account-name" hidden></span><button id="sign-out" hidden>خروج</button>
-<button id="install-app" hidden>نصب روی گوشی</button></nav></header>
+<header><nav aria-label="ناوبری اصلی"><a class="brand" href="/"><img src="/icons/icon-192.png" width="38" height="38" alt="">دیده‌بان تصویر</a>
+<div class="desktop-nav">{navigation(active)}</div></nav></header>
+<nav class="bottom-nav" aria-label="ناوبری موبایل">{navigation(active, mobile=True)}</nav>
 <p id="account-status" role="status" hidden></p>
 <p id="install-help" hidden>در Safari دکمهٔ اشتراک‌گذاری را بزنید و «Add to Home Screen» را انتخاب کنید.</p>
 <p id="offline-status" role="status" hidden>آفلاین هستید؛ نسخهٔ ذخیره‌شده را می‌خوانید.</p>
@@ -173,7 +244,7 @@ def story_record(issue, section, item):
     summary = ' '.join(p for p in item['body'] if section != SURVEY_SECTION or not p.startswith('#### '))
     return {'id': key, 'title': item['title'], 'summary': summary,
             'section': section, 'issue': issue['title'],
-            'url': f'/issues/{issue["slug"]}/#item-{key}'}
+            'url': (f'/surveys/{item["survey_slug"]}/#item-{key}' if item.get('survey_slug') else f'/issues/{issue["slug"]}/#item-{key}')}
 
 
 def issue_page(issue):
@@ -192,14 +263,26 @@ def issue_page(issue):
             record = story_record(issue, title, item)
             body = ''.join(f'<h4>{escape(p[5:])}</h4>' if title == SURVEY_SECTION and p.startswith('#### ')
                            else f'<p>{escape(p)}</p>' for p in item['body'])
-            parts.append(f'<article id="item-{record["id"]}"><span class="number">{fa(i):s}</span><div><h3>{escape(item["title"])}</h3>'
-                         f'{body}{"".join(item["images"])}<div class="links">{" ".join(item["sources"])}'
+            heading = f'<a href="/surveys/{item["survey_slug"]}/">{escape(item["title"])}</a>' if item.get('survey_slug') else escape(item['title'])
+            visible_sources = [link for link in item['sources'] if 'class="survey-link"' in link] if item.get('survey_slug') else item['sources']
+            parts.append(f'<article id="item-{record["id"]}"><span class="number">{fa(i):s}</span><div><h3>{heading}</h3>'
+                         f'{body}{"".join(item["images"])}<div class="links">{" ".join(visible_sources)}'
                          f'<button class="bookmark" data-item-id="{record["id"]}" aria-pressed="false" aria-label="ذخیرهٔ {escape(item["title"], quote=True)}">ذخیره</button></div></div></article>')
         parts.append('</section>')
     if issue.get('execution'):
         parts.append(f'<aside class="execution-summary" aria-label="مشخصات اجرای گزارش"><p>{escape(issue["execution"])}</p></aside>')
     parts.append('<a class="archive" href="/archive/">مشاهدهٔ آرشیو گزارش‌ها ←</a>')
-    return page(issue['title'], ''.join(parts))
+    return page(issue['title'], ''.join(parts), 'home')
+
+
+def survey_page(survey, record):
+    contents = ''.join(f'<a href="#part-{i}">{escape(heading)}</a>' for i, heading in enumerate(SURVEY_HEADINGS))
+    sections = ''.join(f'<section id="part-{i}"><h2>{escape(heading)}</h2>' + ''.join(f'<p>{escape(p)}</p>' for p in paragraphs) + '</section>' for i, (heading, paragraphs) in enumerate(survey['sections'].items()))
+    return page(survey['title'], f'<div class="intro"><p class="kicker">مقالهٔ مروری · درسنامهٔ بینایی ماشین</p><h1>{escape(survey["title"])}</h1><p class="deck">{escape(survey["summary"])}</p>'
+        f'<p class="bookmark-meta">معرفی در <a href="/issues/{survey["first_issue"]}/">{solar_title(survey["first_issue"])}</a></p></div>'
+        f'<nav class="sections" aria-label="بخش‌های مقاله">{contents}</nav><article class="survey-article" id="item-{record["id"]}"><div>{sections}{"".join(survey["images"])}<div class="links">{" ".join(survey["sources"])}'
+        f'<button class="bookmark" data-item-id="{record["id"]}" aria-pressed="false" aria-label="ذخیرهٔ {escape(survey["title"], quote=True)}">ذخیره</button></div></div></article>'
+        '<a class="archive" href="/surveys/">همهٔ مقالات مروری ←</a>', 'surveys')
 
 
 def write_page(relative_path, html):
@@ -229,6 +312,8 @@ def build():
         raise ValueError('Only a Supabase publishable key may be included in the public site')
     config = json.dumps({'url': auth_url, 'publishableKey': public_key}, ensure_ascii=False)
     (OUT / 'assets/account-config.js').write_text('window.DIDEBAN_AUTH = ' + config + ';\n')
+    surveys = {path.stem: parse_survey(path) for path in (ROOT / 'content/surveys').glob('*.md')}
+    survey_records = {}
     catalog = {}
     for issue in issues:
         write_page(f'issues/{issue["slug"]}/index.html', issue_page(issue))
@@ -238,10 +323,27 @@ def build():
                 if record['id'] in catalog:
                     raise ValueError('Duplicate article source in the same issue section')
                 catalog[record['id']] = record
+                if item.get('survey_slug'):
+                    survey = surveys.get(item['survey_slug'])
+                    if not survey or survey['first_issue'] != issue['slug'] or survey['sources'][0] != item['sources'][0] or survey['summary'] != item['body'][0]:
+                        raise ValueError('Missing or mismatched dedicated survey reference')
+                    if survey['slug'] in survey_records:
+                        raise ValueError('Duplicate survey introduction')
+                    survey_records[survey['slug']] = record
+    for slug, survey in surveys.items():
+        if slug not in survey_records:
+            raise ValueError('Dedicated survey must have its originating issue teaser')
+        write_page(f'surveys/{slug}/index.html', survey_page(survey, survey_records[slug]))
+    survey_rows = ''.join(f'<li><a href="/surveys/{survey["slug"]}/"><div><span class="kicker">{solar_title(survey["first_issue"])}</span><h2>{escape(survey["title"])}</h2><p>{escape(survey["summary"])}</p><span class="read-more">مطالعهٔ مقاله ←</span></div></a></li>' for survey in sorted(surveys.values(), key=lambda s: s['first_issue'], reverse=True))
+    survey_intro = '<div class="intro"><p class="kicker">کتابخانهٔ یادگیری</p><h1>مقالات مروری</h1><p class="deck">برای تسلط بر ادبیات بینایی ماشین؛ تحلیل مقاله و ترجمهٔ کامل مقدمه و نتیجه‌گیری.</p></div>'
+    write_page('surveys/index.html', page('مقالات مروری', survey_intro + ('<ul class="survey-list">' + survey_rows + '</ul>' if survey_rows else '<p>هنوز مقالهٔ مروری منتشر نشده است.</p>'), 'surveys'))
     (OUT / 'items.json').write_text(json.dumps(catalog, ensure_ascii=False))
     write_page('bookmarks/index.html', page('ذخیره‌شده‌ها', '<div class="intro"><h1>ذخیره‌شده‌ها</h1>'
-               '<p id="bookmarks-message">برای دیدن لیست اختصاصی خود وارد حساب Google شوید.</p></div><div id="bookmark-list"></div>'))
-    write_page('auth/callback/index.html', page('ورود به حساب', '<div class="intro"><h1>ورود به حساب</h1><p>در حال بررسی ورود…</p></div>'))
+               '<p id="bookmarks-message">برای دیدن لیست اختصاصی خود وارد حساب Google شوید.</p><a href="/account/">مدیریت حساب و ورود ←</a></div><div id="bookmark-list"></div>', 'bookmarks'))
+    write_page('account/index.html', page('حساب کاربری', '<div class="intro"><p class="kicker">فضای شخصی شما</p><h1>حساب کاربری</h1><p class="deck">با حساب Google وارد شوید تا مطالب دلخواهتان را ذخیره کنید و همیشه به آن‌ها دسترسی داشته باشید.</p></div>'
+        '<section class="account-panel"><h2>ورود و حساب</h2><p id="account-name" hidden></p><div class="links"><button id="sign-in">ورود با Google</button><button id="sign-out" hidden>خروج از حساب</button><a href="/bookmarks/">ذخیره‌شده‌های من ←</a></div></section>'
+        '<section class="account-panel"><h2>دیده‌بان روی گوشی</h2><p>برای دسترسی سریع، دیده‌بان تصویر را روی صفحهٔ اصلی گوشی نصب کنید.</p><button id="install-app" hidden>نصب روی گوشی</button></section>', 'account'))
+    write_page('auth/callback/index.html', page('ورود به حساب', '<div class="intro"><h1>ورود به حساب</h1><p>در حال بررسی ورود…</p></div>', 'account'))
     write_page('privacy/index.html', page('سیاست حریم خصوصی', PRIVACY))
     write_page('terms/index.html', page('شرایط استفاده', TERMS))
     write_page('index.html', issue_page(issues[0]))
@@ -255,13 +357,13 @@ def build():
     rows = ''.join(f'<li><a href="/issues/{item["slug"]}/"><strong>{escape(item["title"])}</strong>'
                    f'<span>خواندن گزارش ←</span></a></li>' for item in issues)
     preview_html = '<h2>نسخه‌های آزمایشی</h2><ul class="issues">' + ''.join(preview_rows) + '</ul>' if preview_rows else ''
-    write_page('archive/index.html', page('آرشیو', f'<div class="intro"><h1>آرشیو گزارش‌ها</h1></div><ul class="issues">{rows}</ul>{preview_html}'))
+    write_page('archive/index.html', page('آرشیو', f'<div class="intro"><h1>آرشیو گزارش‌ها</h1></div><ul class="issues">{rows}</ul>{preview_html}', 'archive'))
     paths = sorted(path for path in OUT.rglob('*') if path.is_file() and path.name != 'sw.js')
     digest = hashlib.sha256()
     for path in paths:
         digest.update(path.relative_to(OUT).as_posix().encode())
         digest.update(path.read_bytes())
-    shell = ['/', '/archive/', '/offline.html', '/manifest.webmanifest']
+    shell = ['/', '/archive/', '/surveys/', '/account/', '/offline.html', '/manifest.webmanifest']
     shell += ['/' + path.relative_to(OUT).as_posix() for path in paths if path.parts[-2] in ('assets', 'icons')]
     worker = (OUT / 'sw.js').read_text().replace('__VERSION__', digest.hexdigest()[:20]).replace('__PRECACHE__', json.dumps(shell))
     (OUT / 'sw.js').write_text(worker)

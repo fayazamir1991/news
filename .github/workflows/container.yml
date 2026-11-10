@@ -41,6 +41,7 @@ jobs:
           grep -q 'شرایط استفاده' /tmp/terms.html
           node tests/pwa-browser.cjs
           node tests/bookmarks-browser.cjs
+          node tests/navigation-browser.cjs
           if [ -d content/previews ]; then
             for preview in content/previews/*.md; do
               [ -f "$preview" ] || continue
