@@ -50,58 +50,28 @@
     "sources_file": "GITHUB_DISCOVERY_SOURCES.md",
     "sources": [
       {
-        "id": "github_trending",
-        "url": "https://github.com/trending",
+        "id": "github_trending_monthly",
+        "url": "https://github.com/trending?since=monthly",
         "priority": "primary",
-        "role": "github_ranking"
+        "role": "github_monthly_ranking"
       },
       {
-        "id": "trendshift",
-        "url": "https://trendshift.io/",
+        "id": "github_trending_python_monthly",
+        "url": "https://github.com/trending/python?since=monthly",
         "priority": "primary",
-        "role": "third_party_ranking"
+        "role": "github_language_monthly_ranking"
       },
       {
-        "id": "trendshift_image_recognition",
-        "url": "https://trendshift.io/topics/image-recognition",
-        "priority": "primary",
-        "role": "topic_discovery"
-      },
-      {
-        "id": "upstar_computer_vision",
-        "url": "https://upstar.dev/t/computer-vision",
-        "priority": "supplementary",
-        "role": "third_party_ranking"
-      },
-      {
-        "id": "star_history",
-        "url": "https://www.star-history.com/",
-        "priority": "supplementary",
-        "role": "growth_verification"
-      },
-      {
-        "id": "trendrepo",
-        "url": "https://trendrepo.dev/",
-        "priority": "supplementary",
-        "role": "third_party_growth_discovery"
-      },
-      {
-        "id": "hugging_face_papers",
-        "url": "https://huggingface.co/papers/trending",
-        "priority": "supplementary",
-        "role": "research_discovery"
-      },
-      {
-        "id": "github_computer_vision",
+        "id": "github_topics",
         "url": "https://github.com/topics/computer-vision",
         "priority": "supplementary",
-        "role": "topic_discovery"
+        "role": "topic_discovery_only"
       },
       {
-        "id": "daily_launch",
-        "url": "https://dailylaunch.org/",
+        "id": "github_search",
+        "url": "https://github.com/search?type=repositories",
         "priority": "supplementary",
-        "role": "dated_launch_ranking"
+        "role": "repository_discovery_only"
       }
     ],
     "recency_anchor": "content_as_of",
@@ -125,7 +95,17 @@
       "available_artifacts",
       "licenses",
       "practical_limits"
-    ]
+    ],
+    "github_only": true,
+    "allowed_hosts": [
+      "github.com",
+      "api.github.com",
+      "raw.githubusercontent.com"
+    ],
+    "effective_from_issue": "1405-08-20",
+    "trending_window": "monthly",
+    "established_monthly_trending_repositories_eligible": true,
+    "external_rankings_allowed": false
   },
   "publishing": {
     "directory": "content/briefings",

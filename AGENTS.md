@@ -21,3 +21,5 @@ Every report item supports account-bound like/dislike using the unchanged bookma
 Item actions use one adjacent row of icon-only SVG bookmark, like and dislike buttons, matching bottom-nav line icons (24px viewBox, 1.7 stroke). Keep 44px touch targets, accessible labels, tooltips and selected states; no visible text or emoji. Preserve icons when updating saved state, including the bookmarks list.
 
 Render Persian paper date labels as a single inline span within the date flex container and isolate arXiv with `<bdi dir="ltr">`; keep the label RTL so mixed-script dates retain reading order.
+
+From issue 1405-08-20 onward, GitHub repository discovery and validation use GitHub sources only. Start with official monthly Trending (including relevant language filters); external rankings and third-party lists hosted in repositories are excluded. Existing repositories in monthly Trending remain eligible; do not confuse topic/search results with Trending. See canonical section 6 and GITHUB_DISCOVERY_SOURCES.md.
