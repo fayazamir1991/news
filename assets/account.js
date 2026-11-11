@@ -109,7 +109,9 @@
     document.querySelectorAll('.bookmark').forEach(button => {
       const id = button.dataset.itemId;
       const isSaved = saved.has(id);
-      button.textContent = isSaved ? 'حذف از ذخیره‌شده‌ها' : 'ذخیره';
+      const label = isSaved ? 'حذف از ذخیره‌شده‌ها' : 'ذخیرهٔ مطلب';
+      button.setAttribute('aria-label', label);
+      button.title = label;
       button.setAttribute('aria-pressed', String(isSaved));
       button.disabled = busy.has(id) || (!!session && !loaded);
     });
@@ -146,7 +148,13 @@
           wrapper.append(title);
         }
         const button = document.createElement('button');
-        button.className = 'bookmark';
+        button.className = 'bookmark icon-action';
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        for (const [key, value] of Object.entries({ viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.7', 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'aria-hidden': 'true' })) svg.setAttribute(key, value);
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', 'M6 3h12v18l-6-4-6 4Z');
+        svg.append(path);
+        button.append(svg);
         button.dataset.itemId = id;
         button.setAttribute('aria-label', 'حذف ' + (item?.title || 'مطلب از ذخیره‌شده‌ها'));
         wrapper.append(button);
