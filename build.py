@@ -258,6 +258,12 @@ def story_record(issue, section, item):
             'url': (f'/surveys/{item["survey_slug"]}/#item-{key}' if item.get('survey_slug') else f'/issues/{issue["slug"]}/#item-{key}')}
 
 
+def feedback_buttons(item_id):
+    return (f'<div class="feedback" role="group" aria-label="علاقه به این مطلب">'
+            f'<button class="reaction" data-item-id="{item_id}" data-value="1" aria-pressed="false">👍 لایک</button>'
+            f'<button class="reaction" data-item-id="{item_id}" data-value="-1" aria-pressed="false">👎 دیسلایک</button></div>')
+
+
 def issue_page(issue):
     edition = 'نسخهٔ آزمایشی روزانه' if issue.get('preview') else ('گزارش روزانه' if issue['daily'] else 'گزارش هفتگی آرشیوی')
     parts = [f'<div class="intro"><p class="kicker">{edition}</p><h1>{escape(issue["title"])}</h1>'
@@ -279,7 +285,7 @@ def issue_page(issue):
             paper_date = f'<p class="survey-dates">{escape(item["paper_date_line"])}</p>' if item.get('paper_date_line') else ''
             parts.append(f'<article id="item-{record["id"]}"><span class="number">{fa(i):s}</span><div><h3>{heading}</h3>'
                          f'{paper_date}{body}{"".join(item["images"])}<div class="links">{" ".join(visible_sources)}'
-                         f'<button class="bookmark" data-item-id="{record["id"]}" aria-pressed="false" aria-label="ذخیرهٔ {escape(item["title"], quote=True)}">ذخیره</button></div></div></article>')
+                         f'<button class="bookmark" data-item-id="{record["id"]}" aria-pressed="false" aria-label="ذخیرهٔ {escape(item["title"], quote=True)}">ذخیره</button></div>{feedback_buttons(record["id"])}</div></article>')
         parts.append('</section>')
     if issue.get('execution'):
         parts.append(f'<aside class="execution-summary" aria-label="مشخصات اجرای گزارش"><p>{escape(issue["execution"])}</p></aside>')
@@ -301,7 +307,7 @@ def survey_page(survey, record):
         f'<div class="survey-dates"><span>معرفی در <a href="/issues/{survey["first_issue"]}/">{solar_title(survey["first_issue"])}</a></span>'
         f'<span><a href="{escape(survey["paper_date_source"], quote=True)}" rel="noopener noreferrer">{escape(survey_date_label(survey))}</a></span></div></div>'
         f'{tools}<article class="survey-article" id="item-{record["id"]}"><div>{sections}{"".join(survey["images"])}<div class="links">'
-        f'<button class="bookmark" data-item-id="{record["id"]}" aria-pressed="false" aria-label="ذخیرهٔ {escape(survey["title"], quote=True)}">ذخیره</button></div></div></article>'
+        f'<button class="bookmark" data-item-id="{record["id"]}" aria-pressed="false" aria-label="ذخیرهٔ {escape(survey["title"], quote=True)}">ذخیره</button></div>{feedback_buttons(record["id"])}</div></article>'
         '<a class="archive" href="/surveys/">همهٔ مقالات مروری ←</a>', 'surveys')
 
 

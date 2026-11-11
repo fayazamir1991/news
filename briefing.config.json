@@ -242,5 +242,19 @@
       }
     ],
     "desktop_surveys_link": true
+  },
+  "audience_feedback": {
+    "mode": "collective_public_report",
+    "table": "item_reactions",
+    "aggregate_view": "editorial_feedback",
+    "project_ref": "arkukeyeoobhbsqgiapv",
+    "read_before_selection": true,
+    "minimum_votes": 5,
+    "majority_fraction": 0.6666666666666666,
+    "smoothing_prior": 6,
+    "similarity": "editorial_semantic_comparison",
+    "unknown_item_ids": "ignore",
+    "failure_policy": "base_editorial_criteria_and_disclose_in_execution_status",
+    "personalized_feeds": false
   }
 }

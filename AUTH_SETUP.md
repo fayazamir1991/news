@@ -37,3 +37,7 @@ Sources: [Google provider](https://supabase.com/docs/guides/auth/social-login/au
 The Google authorized redirect URI remains the Supabase callback above; it is different from the application's callback allowlisted in Supabase.
 
 Account controls and PWA installation live at `/account/`. Bookmarks remain at `/bookmarks/`; daily survey cards and their dedicated pages share the original item ID. Navigation rearrangement does not change OAuth callbacks, scopes, session storage, RLS or provider configuration.
+
+## Interest feedback
+
+`supabase/migrations/002_item_reactions.sql` adds one current ±1 vote per user/item, owner-only CRUD policies and cascading account deletion. Anonymous access is denied. The UI shares bookmark item IDs, including survey cards/pages; repeated selection removes the vote and the opposite selection replaces it. Votes require connectivity and are not queued offline. The `editorial_feedback` security-invoker view exposes aggregate counts only to `service_role` / authorized database operators. The daily runner reads it through authorized Supabase SQL tools, joins the current published catalog and follows canonical section 12; no extra frontend secret is needed. `feedback.py` transforms aggregate JSON on stdin into editorial evidence. Unknown IDs (including forged IDs) are ignored. This is a collective editorial signal from voters, not a personalized feed or proof of a majority of all visitors. Raw votes and identities never belong in the public repo.
