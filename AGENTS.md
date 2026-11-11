@@ -19,3 +19,5 @@ Survey metadata must include verified `paper_date`, `paper_date_kind` (`submitte
 Every report item supports account-bound like/dislike using the unchanged bookmark ID. Before selecting daily content, follow canonical section 12: query authorized aggregate `public.editorial_feedback`, join the published catalog, and apply collective semantic feedback. Never publish user identities or per-user feeds. See `feedback.py` and `AUTH_SETUP.md`; unknown item IDs are ignored.
 
 Item actions use one adjacent row of icon-only SVG bookmark, like and dislike buttons, matching bottom-nav line icons (24px viewBox, 1.7 stroke). Keep 44px touch targets, accessible labels, tooltips and selected states; no visible text or emoji. Preserve icons when updating saved state, including the bookmarks list.
+
+Render Persian paper date labels as a single inline span within the date flex container and isolate arXiv with `<bdi dir="ltr">`; keep the label RTL so mixed-script dates retain reading order.

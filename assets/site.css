@@ -61,7 +61,7 @@ button:focus-visible{outline:3px solid #ce6b25;outline-offset:4px}
  .deck{font-size:1rem}.survey-article h2{font-size:1.25rem}.survey-list h2{font-size:1.2rem}footer{margin-top:1rem}
 }
 
-.survey-dates{display:flex;flex-wrap:wrap;gap:.25rem 1.4rem;font-size:.85rem;color:#52665e;margin-block:.6rem}
+.survey-dates{direction:rtl;unicode-bidi:isolate;display:flex;flex-wrap:wrap;gap:.25rem 1.4rem;font-size:.85rem;color:#52665e;margin-block:.6rem}
 .survey-tools{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:1rem;border-block:1px solid var(--rule);padding-block:1rem;margin-top:.5rem}
 .survey-contents,.survey-sources{min-width:0;padding:.85rem 1rem;background:#edf2ed;border:1px solid #dce5de;border-radius:.6rem}
 .tool-label{font-size:.8rem;font-weight:750;color:#52665e;margin-bottom:.65rem}

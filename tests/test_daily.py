@@ -271,11 +271,11 @@ class DailyBriefings(unittest.TestCase):
         survey = build.parse_survey(survey_path)
         record = build.story_record(issue, build.SURVEY_SECTION, issue['sections'][build.SURVEY_SECTION][0])
         daily = build.issue_page(issue)
-        self.assertIn('ارسال به arXiv: ۲۶ خرداد ۱۴۰۴', daily)
+        self.assertIn('<p class="survey-dates" dir="rtl"><span>ارسال به <bdi dir="ltr">arXiv</bdi>: ۲۶ خرداد ۱۴۰۴</span></p>', daily)
         self.assertEqual(len(issue['sections'][build.SURVEY_SECTION][0]['body']), 1)
         full = build.survey_page(survey, record)
         self.assertIn('۱۸ آبان ۱۴۰۵', full)
-        self.assertIn('ارسال به arXiv: ۲۶ خرداد ۱۴۰۴', full)
+        self.assertIn('ارسال به <bdi dir="ltr">arXiv</bdi>: ۲۶ خرداد ۱۴۰۴', full)
         self.assertLess(full.index('class="survey-sources"'), full.index('class="survey-article"'))
         self.assertEqual(full.count('class="source"'), 1)
         survey['paper_date_kind'] = 'published'
