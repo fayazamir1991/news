@@ -23,8 +23,8 @@ class Feedback(unittest.TestCase):
         catalog = json.loads((build.OUT / 'items.json').read_text())
         for path in (build.OUT / 'issues').glob('*/index.html'):
             text = path.read_text()
-            self.assertEqual(text.count('class="reaction"'), 2*text.count('class="bookmark"'))
+            self.assertEqual(text.count('class="reaction icon-action"'), 2*text.count('class="bookmark icon-action"'))
         for path in (build.OUT / 'surveys').glob('*/index.html'):
             text = path.read_text()
-            self.assertEqual(text.count('class="reaction"'),2)
+            self.assertEqual(text.count('class="reaction icon-action"'),2)
             self.assertTrue(any(f'data-item-id="{k}"' in text for k in catalog))

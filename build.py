@@ -258,10 +258,23 @@ def story_record(issue, section, item):
             'url': (f'/surveys/{item["survey_slug"]}/#item-{key}' if item.get('survey_slug') else f'/issues/{issue["slug"]}/#item-{key}')}
 
 
-def feedback_buttons(item_id):
-    return (f'<div class="feedback" role="group" aria-label="علاقه به این مطلب">'
-            f'<button class="reaction" data-item-id="{item_id}" data-value="1" aria-pressed="false">👍 لایک</button>'
-            f'<button class="reaction" data-item-id="{item_id}" data-value="-1" aria-pressed="false">👎 دیسلایک</button></div>')
+ACTION_ICONS = {
+    'bookmark': '<path d="M6 3h12v18l-6-4-6 4Z"/>',
+    'like': '<path d="M7 10v11H3V10h4ZM7 10l4-8a3 3 0 0 1 3 3v4h5a2 2 0 0 1 2 2.4l-1.5 7A3 3 0 0 1 16.6 21H7"/>',
+    'dislike': '<path d="M7 14V3H3v11h4ZM7 14l4 8a3 3 0 0 0 3-3v-4h5a2 2 0 0 0 2-2.4l-1.5-7A3 3 0 0 0 16.6 3H7"/>',
+}
+
+
+def action_icon(name):
+    return (f'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" '
+            f'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{ACTION_ICONS[name]}</svg>')
+
+
+def item_actions(item_id):
+    return (f'<div class="item-actions" role="group" aria-label="ذخیره و علاقه به این مطلب">'
+            f'<button class="bookmark icon-action" data-item-id="{item_id}" aria-pressed="false" aria-label="ذخیرهٔ مطلب" title="ذخیرهٔ مطلب">{action_icon("bookmark")}</button>'
+            f'<button class="reaction icon-action" data-item-id="{item_id}" data-value="1" aria-pressed="false" aria-label="لایک" title="لایک">{action_icon("like")}</button>'
+            f'<button class="reaction icon-action" data-item-id="{item_id}" data-value="-1" aria-pressed="false" aria-label="دیسلایک" title="دیسلایک">{action_icon("dislike")}</button></div>')
 
 
 def issue_page(issue):
@@ -285,7 +298,7 @@ def issue_page(issue):
             paper_date = f'<p class="survey-dates">{escape(item["paper_date_line"])}</p>' if item.get('paper_date_line') else ''
             parts.append(f'<article id="item-{record["id"]}"><span class="number">{fa(i):s}</span><div><h3>{heading}</h3>'
                          f'{paper_date}{body}{"".join(item["images"])}<div class="links">{" ".join(visible_sources)}'
-                         f'<button class="bookmark" data-item-id="{record["id"]}" aria-pressed="false" aria-label="ذخیرهٔ {escape(item["title"], quote=True)}">ذخیره</button></div>{feedback_buttons(record["id"])}</div></article>')
+                         f'</div>{item_actions(record["id"])}</div></article>')
         parts.append('</section>')
     if issue.get('execution'):
         parts.append(f'<aside class="execution-summary" aria-label="مشخصات اجرای گزارش"><p>{escape(issue["execution"])}</p></aside>')
@@ -307,7 +320,7 @@ def survey_page(survey, record):
         f'<div class="survey-dates"><span>معرفی در <a href="/issues/{survey["first_issue"]}/">{solar_title(survey["first_issue"])}</a></span>'
         f'<span><a href="{escape(survey["paper_date_source"], quote=True)}" rel="noopener noreferrer">{escape(survey_date_label(survey))}</a></span></div></div>'
         f'{tools}<article class="survey-article" id="item-{record["id"]}"><div>{sections}{"".join(survey["images"])}<div class="links">'
-        f'<button class="bookmark" data-item-id="{record["id"]}" aria-pressed="false" aria-label="ذخیرهٔ {escape(survey["title"], quote=True)}">ذخیره</button></div>{feedback_buttons(record["id"])}</div></article>'
+        f'</div>{item_actions(record["id"])}</div></article>'
         '<a class="archive" href="/surveys/">همهٔ مقالات مروری ←</a>', 'surveys')
 
 

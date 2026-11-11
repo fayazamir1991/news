@@ -69,4 +69,11 @@ button:focus-visible{outline:3px solid #ce6b25;outline-offset:4px}
 .tool-links a:hover{background:#e0eee6;border-color:var(--teal)}
 @media(max-width:760px){.survey-tools{grid-template-columns:minmax(0,1fr)}.survey-dates{gap:.3rem 1rem}.survey-contents,.survey-sources{padding:.8rem}}
 
-.feedback{display:flex;flex-wrap:wrap;gap:.6rem;margin-top:1rem}.reaction{min-height:44px;padding:.5rem .85rem;border:1px solid var(--muted,#697b86);border-radius:.7rem;background:transparent;color:inherit;cursor:pointer}.reaction[aria-pressed="true"]{background:#12595a;color:#fff;border-color:#22b8a6}.reaction:disabled{opacity:.5;cursor:wait}.reaction:focus-visible{outline:3px solid #22b8a6;outline-offset:3px}
+.item-actions{display:flex;align-items:center;gap:.35rem;margin-top:.9rem;width:fit-content;padding:.2rem;border:1px solid #dce5e0;border-radius:.85rem;background:#f7faf8}
+.item-actions .icon-action,.bookmark.icon-action{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;min-width:44px;padding:0;border:0;border-radius:.65rem;background:transparent;color:var(--teal);cursor:pointer;transition:background .15s,color .15s}
+.icon-action svg{width:21px;height:21px;flex-shrink:0;pointer-events:none}
+.icon-action:hover{background:#e7eeea}
+.icon-action[aria-pressed="true"]{background:var(--teal);color:#fff}
+.icon-action[data-value="-1"][aria-pressed="true"]{background:#8a4545;color:#fff}
+.icon-action:disabled{opacity:.45;cursor:wait}
+.icon-action:focus-visible{outline:2px solid var(--teal);outline-offset:3px}
