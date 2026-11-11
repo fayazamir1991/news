@@ -12,6 +12,10 @@
   let reading = 0;
   let loaded = false;
   let saved = new Set();
+  let reactions = new Map();
+  let reactionsLoaded = false;
+  let reactionReading = 0;
+  const reactionBusy = new Set();
   const busy = new Set();
   const configured = !!(config.url && config.publishableKey);
 
@@ -44,7 +48,64 @@
     return catalog;
   }
 
+  function updateReactions() {
+    document.querySelectorAll('.reaction').forEach(button => {
+      button.setAttribute('aria-pressed', String(reactions.get(button.dataset.itemId) === Number(button.dataset.value)));
+      button.disabled = reactionBusy.has(button.dataset.itemId) || (!!session && !reactionsLoaded);
+      button.title = session ? 'برای پس‌گرفتن رأی، دوباره همین دکمه را بزنید.' : 'برای ثبت رأی با Google وارد شوید.';
+    });
+  }
+
+  async function readReactions() {
+    if (!session || !client) return;
+    const epoch = generation, request = ++reactionReading, userId = session.user.id;
+    try {
+      const rows = [];
+      for (let offset = 0; ; offset += 500) {
+        const { data, error } = await client.from('item_reactions').select('item_id,value')
+          .eq('user_id', userId).order('item_id').range(offset, offset + 499);
+        if (error) throw error;
+        rows.push(...data);
+        if (data.length < 500) break;
+      }
+      if (epoch !== generation || request !== reactionReading) return;
+      reactions = new Map(rows.map(row => [row.item_id, row.value]));
+      reactionsLoaded = true;
+      updateReactions();
+    } catch {
+      if (epoch === generation && request === reactionReading) announce('دریافت رأی‌ها انجام نشد. اتصال را بررسی و صفحه را دوباره باز کنید.');
+    }
+  }
+
+  async function toggleReaction(button) {
+    if (!session) { await signIn(); return; }
+    const id = button.dataset.itemId;
+    if (!reactionsLoaded || reactionBusy.has(id)) return;
+    if (!navigator.onLine) { announce('برای ثبت رأی به اینترنت وصل شوید.'); return; }
+    const epoch = generation, userId = session.user.id, value = Number(button.dataset.value);
+    const removing = reactions.get(id) === value;
+    reactionBusy.add(id);
+    updateReactions();
+    try {
+      const query = client.from('item_reactions');
+      const result = removing
+        ? await query.delete().eq('user_id', userId).eq('item_id', id)
+        : await query.upsert({ user_id: userId, item_id: id, value }, { onConflict: 'user_id,item_id' });
+      if (result.error) throw result.error;
+      if (epoch !== generation) return;
+      // Invalidate an older in-flight read before applying this confirmed write.
+      reactionReading++;
+      if (removing) reactions.delete(id); else reactions.set(id, value);
+      announce(removing ? 'رأی شما پس گرفته شد.' : 'رأی ثبت شد و در انتخاب گزارش‌های عمومی بعدی اثر می‌گذارد.');
+    } catch {
+      if (epoch === generation) announce('رأی ذخیره نشد. دوباره تلاش کنید.');
+    } finally {
+      if (epoch === generation) { reactionBusy.delete(id); updateReactions(); }
+    }
+  }
+
   function updateButtons() {
+    updateReactions();
     document.querySelectorAll('.bookmark').forEach(button => {
       const id = button.dataset.itemId;
       const isSaved = saved.has(id);
@@ -130,11 +191,14 @@
     if (changedUser || !next) {
       generation++;
       saved.clear();
+      reactions.clear();
+      reactionsLoaded = false;
+      reactionBusy.clear();
       loaded = false;
       busy.clear();
     }
     render();
-    if (next) void readBookmarks();
+    if (next) { void readBookmarks(); void readReactions(); }
   }
 
   async function signIn() {
@@ -233,10 +297,12 @@
     finally { logout.disabled = false; }
   });
   document.addEventListener('click', event => {
+    const reaction = event.target.closest('.reaction');
+    if (reaction) void toggleReaction(reaction);
     const button = event.target.closest('.bookmark');
     if (button) void toggleBookmark(button);
   });
-  window.addEventListener('online', () => { if (session) void readBookmarks(); else if (configured) void initialize().catch(() => {}); });
+  window.addEventListener('online', () => { if (session) { void readBookmarks(); void readReactions(); } else if (configured) void initialize().catch(() => {}); });
   render();
   if (configured) void initialize().catch(() => {});
 })();

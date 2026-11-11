@@ -68,3 +68,5 @@ button:focus-visible{outline:3px solid #ce6b25;outline-offset:4px}
 .tool-links{display:flex;flex-wrap:wrap;gap:.5rem}.tool-links a{font-size:.84rem;line-height:1.8;padding:.4rem .65rem;border:1px solid #cbd8d0;border-radius:.4rem;background:var(--paper);text-decoration:none;overflow-wrap:anywhere;max-width:100%;min-height:44px;display:flex;align-items:center}
 .tool-links a:hover{background:#e0eee6;border-color:var(--teal)}
 @media(max-width:760px){.survey-tools{grid-template-columns:minmax(0,1fr)}.survey-dates{gap:.3rem 1rem}.survey-contents,.survey-sources{padding:.8rem}}
+
+.feedback{display:flex;flex-wrap:wrap;gap:.6rem;margin-top:1rem}.reaction{min-height:44px;padding:.5rem .85rem;border:1px solid var(--muted,#697b86);border-radius:.7rem;background:transparent;color:inherit;cursor:pointer}.reaction[aria-pressed="true"]{background:#12595a;color:#fff;border-color:#22b8a6}.reaction:disabled{opacity:.5;cursor:wait}.reaction:focus-visible{outline:3px solid #22b8a6;outline-offset:3px}
