@@ -277,6 +277,10 @@ def item_actions(item_id):
             f'<button class="reaction icon-action" data-item-id="{item_id}" data-value="-1" aria-pressed="false" aria-label="دیسلایک" title="دیسلایک">{action_icon("dislike")}</button></div>')
 
 
+def paper_date_html(label):
+    return escape(label).replace('arXiv', '<bdi dir="ltr">arXiv</bdi>')
+
+
 def issue_page(issue):
     edition = 'نسخهٔ آزمایشی روزانه' if issue.get('preview') else ('گزارش روزانه' if issue['daily'] else 'گزارش هفتگی آرشیوی')
     parts = [f'<div class="intro"><p class="kicker">{edition}</p><h1>{escape(issue["title"])}</h1>'
@@ -295,7 +299,7 @@ def issue_page(issue):
                            else f'<p>{escape(p)}</p>' for p in item['body'])
             heading = f'<a href="/surveys/{item["survey_slug"]}/">{escape(item["title"])}</a>' if item.get('survey_slug') else escape(item['title'])
             visible_sources = [link for link in item['sources'] if 'class="survey-link"' in link] if item.get('survey_slug') else item['sources']
-            paper_date = f'<p class="survey-dates">{escape(item["paper_date_line"])}</p>' if item.get('paper_date_line') else ''
+            paper_date = f'<p class="survey-dates" dir="rtl"><span>{paper_date_html(item["paper_date_line"])}</span></p>' if item.get('paper_date_line') else ''
             parts.append(f'<article id="item-{record["id"]}"><span class="number">{fa(i):s}</span><div><h3>{heading}</h3>'
                          f'{paper_date}{body}{"".join(item["images"])}<div class="links">{" ".join(visible_sources)}'
                          f'</div>{item_actions(record["id"])}</div></article>')
@@ -318,7 +322,7 @@ def survey_page(survey, record):
     tools += f'<aside class="survey-sources" aria-label="لینک‌های مستقیم مقاله"><p class="tool-label">مقاله و منابع اصلی</p><div class="tool-links">{" ".join(survey["sources"])}</div></aside></div>'
     return page(survey['title'], f'<div class="intro"><p class="kicker">مقالهٔ مروری · درسنامهٔ بینایی ماشین</p><h1>{escape(survey["title"])}</h1><p class="deck">{escape(survey["summary"])}</p>'
         f'<div class="survey-dates"><span>معرفی در <a href="/issues/{survey["first_issue"]}/">{solar_title(survey["first_issue"])}</a></span>'
-        f'<span><a href="{escape(survey["paper_date_source"], quote=True)}" rel="noopener noreferrer">{escape(survey_date_label(survey))}</a></span></div></div>'
+        f'<span><a href="{escape(survey["paper_date_source"], quote=True)}" rel="noopener noreferrer">{paper_date_html(survey_date_label(survey))}</a></span></div></div>'
         f'{tools}<article class="survey-article" id="item-{record["id"]}"><div>{sections}{"".join(survey["images"])}<div class="links">'
         f'</div>{item_actions(record["id"])}</div></article>'
         '<a class="archive" href="/surveys/">همهٔ مقالات مروری ←</a>', 'surveys')
