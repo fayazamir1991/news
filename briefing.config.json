@@ -27,6 +27,10 @@
       "maximum": 1
     },
     {
+      "title": "یادگیری از Face Benchmark",
+      "maximum": 1
+    },
+    {
       "title": "پژوهش‌ها",
       "maximum": 10
     },
@@ -195,6 +199,31 @@
     "paper_date_primary_evidence_required": true,
     "paper_date_on_daily_card_and_article": true,
     "direct_sources_position": "separate_panel_next_to_table_of_contents_before_full_text"
+  },
+  "face_recognition_learning": {
+    "effective_from_issue": "1405-08-21",
+    "source_hub": "https://face-benchmark.org/face-recognition/",
+    "position": "after_daily_survey",
+    "items_per_issue": 1,
+    "avoid_repeating_pages": true,
+    "first_topics": [
+      "face_embeddings_and_training",
+      "verification_1_to_1_vs_identification_1_to_n",
+      "fmr_fnmr_fpir_fnir_and_thresholds",
+      "arcface_and_angular_margin_loss",
+      "insightface_and_pretrained_models",
+      "cross_dataset_generalization_and_real_world_evaluation"
+    ],
+    "required_fields": [
+      "problem_and_definition",
+      "mechanism_inputs_outputs",
+      "building_access_example",
+      "distinction_from_adjacent_concepts",
+      "primary_evidence_and_limits",
+      "product_selection_and_test_implications"
+    ],
+    "verify_claims_with_primary_sources": true,
+    "secondary_guide_not_independent_leaderboard": true
   },
   "navigation": {
     "account_route": "/account/",

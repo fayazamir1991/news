@@ -54,6 +54,42 @@ class DailyBriefings(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'five GitHub'):
             build.parse(self.write_day(repos=6))
 
+    def face_benchmark_block(self, key='1405-08-21'):
+        date_label = build.solar_title(key).rsplit(' ', 1)[0]
+        return '\n'.join([
+            '## یادگیری از Face Benchmark', f'### {date_label} · embedding چهره از تصویر تا تصمیم تطبیق',
+            'embedding برداری است که شباهت دو چهره را برای یک آستانهٔ مشخص قابل سنجش می‌کند.',
+            '[راهنمای Face Benchmark](https://face-benchmark.org/face-recognition/face-embeddings-explained/)', '',
+        ])
+
+    def test_face_benchmark_lesson_is_required_from_effective_issue(self):
+        path = self.write_day('1405-08-21')
+        with self.assertRaisesRegex(ValueError, 'out-of-order'):
+            build.parse(path)
+        path.write_text(path.read_text().replace('## پژوهش‌ها', self.survey_block().replace('۱۸ آبان', '۲۱ آبان') + '\n' + self.face_benchmark_block() + '\n## پژوهش‌ها'))
+        issue = build.parse(path)
+        self.assertEqual(list(issue['sections']), list(build.SECTIONS))
+        html = build.issue_page(issue)
+        self.assertLess(html.index('id="face-benchmark"'), html.index('id="research"'))
+
+    def test_face_benchmark_requires_direct_source_and_single_item(self):
+        path = self.write_day('1405-08-21')
+        empty = self.survey_block().replace('۱۸ آبان', '۲۱ آبان') + '\n## یادگیری از Face Benchmark'
+        path.write_text(path.read_text().replace('## پژوهش‌ها', empty + '\n## پژوهش‌ها'))
+        with self.assertRaisesRegex(ValueError, 'exactly one Face Benchmark'):
+            build.parse(path)
+        path = self.write_day('1405-08-21')
+        valid = self.survey_block().replace('۱۸ آبان', '۲۱ آبان') + '\n' + self.face_benchmark_block()
+        path.write_text(path.read_text().replace('## پژوهش‌ها', valid + '\n## پژوهش‌ها'))
+        path.write_text(path.read_text().replace('face-benchmark.org', 'example.org'))
+        with self.assertRaisesRegex(ValueError, 'direct Face Benchmark'):
+            build.parse(path)
+        path.write_text(path.read_text().replace('example.org', 'face-benchmark.org'))
+        extra = self.face_benchmark_block().replace('## یادگیری از Face Benchmark\n', '')
+        path.write_text(path.read_text().replace('\n## پژوهش‌ها', '\n' + extra + '\n## پژوهش‌ها'))
+        with self.assertRaisesRegex(ValueError, 'exactly one Face Benchmark'):
+            build.parse(path)
+
     def survey_block(self):
         return '\n'.join([
             '## مقالهٔ مروری روز', '### ۱۸ آبان · درس ردیابی',
@@ -69,7 +105,7 @@ class DailyBriefings(unittest.TestCase):
         existing = build.story_record(old, 'گیت‌هاب', old['sections']['گیت‌هاب'][0])
         path.write_text(path.read_text().replace('## پژوهش‌ها', self.survey_block() + '\n## پژوهش‌ها'))
         issue = build.parse(path)
-        self.assertEqual(list(issue['sections']), list(build.SECTIONS))
+        self.assertEqual(list(issue['sections']), [build.SURVEY_SECTION, *build.NEWS_SECTIONS])
         html = build.issue_page(issue)
         self.assertLess(html.index('<section id="survey"'), html.index('<section id="research"'))
         self.assertIn('<h4>ترجمهٔ کامل مقدمه</h4>', html)
