@@ -13,8 +13,10 @@ ROOT = Path(__file__).resolve().parent
 OUT = ROOT / 'dist'
 NEWS_SECTIONS = {'پژوهش‌ها': 'research', 'بینایی ماشین': 'vision', 'هوش مصنوعی': 'ai', 'گیت‌هاب': 'github'}
 SURVEY_SECTION = 'مقالهٔ مروری روز'
+FACE_BENCHMARK_SECTION = 'یادگیری از Face Benchmark'
+FACE_BENCHMARK_EFFECTIVE_FROM = '1405-08-21'
 SURVEY_HEADINGS = ('توضیح و تحلیل مقاله', 'ترجمهٔ کامل مقدمه', 'ترجمهٔ کامل نتیجه‌گیری')
-SECTIONS = {SURVEY_SECTION: 'survey', **NEWS_SECTIONS}
+SECTIONS = {SURVEY_SECTION: 'survey', FACE_BENCHMARK_SECTION: 'face-benchmark', **NEWS_SECTIONS}
 MONTHS = 'فروردین اردیبهشت خرداد تیر مرداد شهریور مهر آبان آذر دی بهمن اسفند'.split()
 ARCHIVE_DATE = re.compile(r'<!-- weekly-end: ([0-9]{4}-[0-9]{2}-[0-9]{2}) -->')
 LINK = re.compile(r'(!?)\[([^\]]+)\]\((https?://[^\s]+|/surveys/[^\s]+)\)')
@@ -128,12 +130,20 @@ def parse(path):
                     story['survey_slug'] = slug
             else:
                 story['body'].append(line)
-    expected = (list(NEWS_SECTIONS)[:-1] if archived else
-                list(SECTIONS) if SURVEY_SECTION in sections else list(NEWS_SECTIONS))
+    if archived:
+        expected = list(NEWS_SECTIONS)[:-1]
+    elif day_key >= FACE_BENCHMARK_EFFECTIVE_FROM or FACE_BENCHMARK_SECTION in sections:
+        expected = list(SECTIONS)
+    elif SURVEY_SECTION in sections:
+        expected = [SURVEY_SECTION, *NEWS_SECTIONS]
+    else:
+        expected = list(NEWS_SECTIONS)
     if list(sections) != expected:
         raise ValueError(f'{path}: missing or out-of-order section')
     if len(sections.get(SURVEY_SECTION, [])) > 1:
         raise ValueError(f'{path}: at most one daily survey')
+    if day_key >= FACE_BENCHMARK_EFFECTIVE_FROM and len(sections.get(FACE_BENCHMARK_SECTION, [])) != 1:
+        raise ValueError(f'{path}: exactly one Face Benchmark lesson per issue')
     if len(sections.get('گیت‌هاب', [])) > 5:
         raise ValueError(f'{path}: at most five GitHub repositories per issue')
     for name, stories in sections.items():
@@ -144,6 +154,8 @@ def parse(path):
                 raise ValueError(f'{path}: article date must match the issue date')
             if name == 'گیت‌هاب' and not any(re.search(r'href="https://github\.com/[^/?#"]+/[^/?#"]+/?["#?]', link) for link in item['sources']):
                 raise ValueError(f'{path}: include the direct GitHub repository link')
+            if name == FACE_BENCHMARK_SECTION and not any('href="https://face-benchmark.org/' in link for link in item['sources']):
+                raise ValueError(f'{path}: include the direct Face Benchmark page')
             if name == SURVEY_SECTION and item.get('survey_slug'):
                 if len(item['body']) != 1 or item['body'][0].startswith('#'):
                     raise ValueError(f'{path}: survey teaser needs exactly one paragraph')
