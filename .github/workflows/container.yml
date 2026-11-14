@@ -31,7 +31,7 @@ jobs:
           base=http://127.0.0.1:8080
           curl --retry 12 --retry-all-errors --retry-delay 1 --max-time 4 -fsS "$base/healthz"
           curl -fsS "$base/" -o /tmp/weekly-home.html
-          grep -q 'id="research"' /tmp/weekly-home.html
+          grep -q 'id="face-benchmark"' /tmp/weekly-home.html
           curl -fsS "$base/archive/" -o /tmp/weekly-archive.html
           grep -q '/issues/' /tmp/weekly-archive.html
           curl -fsS "$base/assets/vazirmatn.woff2" -o /dev/null

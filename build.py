@@ -132,6 +132,9 @@ def parse(path):
                 story['body'].append(line)
     if archived:
         expected = list(NEWS_SECTIONS)[:-1]
+    elif day_key >= '1405-08-22':
+        optional = {SURVEY_SECTION, 'پژوهش‌ها'}
+        expected = [name for name in SECTIONS if name not in optional or name in sections]
     elif day_key >= FACE_BENCHMARK_EFFECTIVE_FROM or FACE_BENCHMARK_SECTION in sections:
         expected = list(SECTIONS)
     elif SURVEY_SECTION in sections:
@@ -140,6 +143,10 @@ def parse(path):
         expected = list(NEWS_SECTIONS)
     if list(sections) != expected:
         raise ValueError(f'{path}: missing or out-of-order section')
+    if not archived and day_key >= '1405-08-22':
+        for name in (SURVEY_SECTION, 'پژوهش‌ها'):
+            if name in sections and not sections[name]:
+                raise ValueError(f'{path}: omit empty article sections')
     if len(sections.get(SURVEY_SECTION, [])) > 1:
         raise ValueError(f'{path}: at most one daily survey')
     if day_key >= FACE_BENCHMARK_EFFECTIVE_FROM and len(sections.get(FACE_BENCHMARK_SECTION, [])) != 1:
