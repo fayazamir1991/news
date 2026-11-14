@@ -23,8 +23,9 @@ const assert = require('node:assert/strict');
       assert(boxes.slice(1).every((b, i) => b.x < boxes[i].x));
       assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
       assert.equal(await nav.locator('[aria-current="page"]').getAttribute('href'), '/');
-      assert.match(await page.locator('#survey .survey-dates').innerText(), /^(ارسال به arXiv|انتشار مقاله): [۰-۹]+/);
     }
+    await page.goto(origin + '/issues/1405-08-21/');
+    assert.match(await page.locator('#survey .survey-dates').innerText(), /^(ارسال به arXiv|انتشار مقاله): [۰-۹]+/);
     await page.locator('.bottom-nav a[href="/surveys/"]').click();
     assert.equal(await page.locator('h1').innerText(), 'مقالات مروری');
     await page.locator('.survey-list a').first().click();
