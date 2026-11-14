@@ -90,6 +90,20 @@ class DailyBriefings(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'exactly one Face Benchmark'):
             build.parse(path)
 
+    def test_same_day_article_sections_can_be_omitted(self):
+        path = self.write_day('1405-08-22')
+        text = path.read_text().replace('## پژوهش‌ها', self.face_benchmark_block('1405-08-22'))
+        path.write_text(text)
+        issue = build.parse(path)
+        self.assertNotIn('پژوهش‌ها', issue['sections'])
+        self.assertNotIn(build.SURVEY_SECTION, issue['sections'])
+        html = build.issue_page(issue)
+        self.assertNotIn('id="research"', html)
+        self.assertNotIn('id="survey"', html)
+        path.write_text(text.replace('## بینایی ماشین', '## پژوهش‌ها\n## بینایی ماشین'))
+        with self.assertRaisesRegex(ValueError, 'omit empty article'):
+            build.parse(path)
+
     def survey_block(self):
         return '\n'.join([
             '## مقالهٔ مروری روز', '### ۱۸ آبان · درس ردیابی',

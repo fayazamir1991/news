@@ -161,7 +161,7 @@
     "position": "first",
     "target_count": 1,
     "read_entire_paper": true,
-    "educational_recency_exception": true,
+    "educational_recency_exception": false,
     "avoid_repeating_arxiv_id": true,
     "subsections": [
       "توضیح و تحلیل مقاله",
@@ -265,5 +265,20 @@
     "unknown_item_ids": "ignore",
     "failure_policy": "base_editorial_criteria_and_disclose_in_execution_status",
     "personalized_feeds": false
+  },
+  "article_recency": {
+    "effective_from_issue": "1405-08-22",
+    "exact_issue_day_required": true,
+    "date_basis": [
+      "first_submission",
+      "formal_publication"
+    ],
+    "timezone": "Asia/Tehran",
+    "omit_empty_sections": true,
+    "applies_to": [
+      "مقالهٔ مروری روز",
+      "پژوهش‌ها"
+    ],
+    "face_benchmark_learning_exempt": true
   }
 }

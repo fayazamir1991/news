@@ -114,8 +114,8 @@ const assert = require('node:assert/strict');
     await page.evaluate(() => { window.mockFail = false; });
     await page.locator('.bookmark').click();
     await page.waitForFunction(() => document.querySelector('#bookmark-list').children.length === 0);
-    // The same survey has one bookmark identity on its daily card and full page.
-    await page.goto(origin);
+    // Use an archived issue with a survey, even when the latest issue has none.
+    await page.goto(origin + '/issues/1405-08-21/');
     const surveyButton = page.locator('#survey .bookmark');
     const surveyId = await surveyButton.getAttribute('data-item-id');
     await page.waitForFunction(() => !document.querySelector('#survey .bookmark').disabled);
