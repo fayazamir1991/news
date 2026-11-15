@@ -161,7 +161,7 @@
     "position": "first",
     "target_count": 1,
     "read_entire_paper": true,
-    "educational_recency_exception": false,
+    "educational_recency_exception": true,
     "avoid_repeating_arxiv_id": true,
     "subsections": [
       "توضیح و تحلیل مقاله",
@@ -198,7 +198,9 @@
     ],
     "paper_date_primary_evidence_required": true,
     "paper_date_on_daily_card_and_article": true,
-    "direct_sources_position": "separate_panel_next_to_table_of_contents_before_full_text"
+    "direct_sources_position": "separate_panel_next_to_table_of_contents_before_full_text",
+    "recency": "any_date",
+    "independent_of_new_research": true
   },
   "face_recognition_learning": {
     "effective_from_issue": "1405-08-21",
@@ -276,9 +278,10 @@
     "timezone": "Asia/Tehran",
     "omit_empty_sections": true,
     "applies_to": [
-      "مقالهٔ مروری روز",
       "پژوهش‌ها"
     ],
-    "face_benchmark_learning_exempt": true
+    "face_benchmark_learning_exempt": true,
+    "daily_survey_exempt": true,
+    "clarified_on": "1405-08-24"
   }
 }
